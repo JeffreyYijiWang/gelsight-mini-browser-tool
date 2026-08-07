@@ -7,10 +7,11 @@ from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile 
 
 #### Quick Links
 
-* [**Purchase** a GelSight Mini](https://www.gelsight.com/product/gelsight-mini-system/) (~\$500)
+* [**Purchase** a GelSight Mini](https://www.gelsight.com/product/gelsight-mini-system/) (~\$500-600)
 * [**Test** the Gelsight Mini browser tool, online](https://golanlevin.github.io/gelsight_p5/)
 * [**View** a brief YouTube tutorial here](https://www.youtube.com/watch?v=4apYlLzpnoo)
-* [**Read** technical documentation here](technical_information_js.md)
+* [**Read** the technical documentation here](technical_information_js.md)
+* [**Watch** Steve Mould's video about GelSight](https://www.youtube.com/watch?v=qtQ4rK66vlE)
 
 ---
 
@@ -18,7 +19,7 @@ from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile 
 
 > The GelSight family of tactile sensors are vision-based touch sensors that transform physical contact into high-resolution 3D measurements of surface geometry. Rather than relying on arrays of pressure sensors, a GelSight device contains a soft, transparent elastomer coated with a reflective membrane; when pressed against an object, the gel conforms to its microscopic topography, and an internal camera with colored LED illumination images the resulting deformation. Using photometric stereo, the system reconstructs a micron-scale 3D height map. Because the sensing process depends on geometry rather than optical appearance, GelSight can accurately inspect opaque, reflective, transparent, or textured materials with sub-micron depth sensitivity.
 
-The [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) is a [\$500 tactile sensor](https://www.gelsight.com/product/gelsight-mini-system/) which presents to the computer as a standard UVC webcam. The browser captures its live video stream, estimates a depth map from the colored tactile image, displays a 3D mesh preview, and exports captures as ZIP files containing images, depth maps, OBJ meshes, calibration data, and metadata.
+The [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) is a [\$510 tactile sensor](https://www.gelsight.com/product/gelsight-mini-system/) which presents to the computer as a standard UVC webcam. The browser captures its live video stream, estimates a depth map from the colored tactile image, displays a 3D mesh preview, and exports captures as ZIP files containing images, depth maps, OBJ meshes, calibration data, and metadata.
 
 
 ---
