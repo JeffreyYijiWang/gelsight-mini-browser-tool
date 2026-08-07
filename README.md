@@ -1,8 +1,7 @@
 # GelSight-Mini View/Export Tool
 
-* This is a browser-based tool for viewing, reconstructing, and exporting data
-from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile sensor.
-* Created by Golan Levin at CMU's Frank-Ratchye STUDIO for Creative Inquiry, August 2026.
+> This is a browser-based tool for viewing, reconstructing, and exporting data
+from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile sensor. This work was created by Golan Levin at CMU's Frank-Ratchye STUDIO for Creative Inquiry, August 2026.
 
 ![gelsight_coin_loop.gif](images/gelsight_coin_loop.gif)
 
