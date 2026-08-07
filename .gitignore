@@ -1,0 +1,61 @@
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
+._*
+
+# Python bytecode and caches
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Python packages and build artifacts
+*.egg
+*.egg-info/
+*.whl
+build/
+dist/
+pip-wheel-metadata/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+python/.venv/
+python/venv/
+
+# Node dependencies and local package-manager state
+node_modules/
+gelsight_p5/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+
+# Playwright/browser test scratch data
+.playwright-profile/
+playwright-report/
+test-results/
+
+# Local generated outputs
+out/
+python/out/
+
+# Local notes and large walkthrough captures
+notes.txt
+gelsight_mini_walkthrough.mov
+
+# Upstream/vendor reference code drop
+gsrobotics/
+
+# Large local OpenCV/Emscripten build folders. Keep small project-authored
+# scripts/docs/tests in opencv-build/ trackable.
+opencv-build/emsdk/
+opencv-build/opencv-*/
+opencv-build/build-opencv-js/
