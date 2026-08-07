@@ -34,21 +34,21 @@ The [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) is a [\$510
 
 ## First-Time Setup
 
-Download or clone this repository, then start a local web server from the
-top-level project folder:
+If you wish, you can test the software online, at this URL: 
+
+> [https://golanlevin.github.io/gelsight_p5/](https://golanlevin.github.io/gelsight_p5/)
+
+***Alternatively***, you can run the software locally. Download or clone this repository, then start a local web server from the top-level project folder:
 
 ```sh
 python3 -m http.server 8002
 ```
 
-Open this URL in Chrome:
+Then open this local web server URL in Chrome:
 
 ```text
 http://127.0.0.1:8002/gelsight_p5/
 ```
-
-You do not need Node.js or npm for normal use of the tool. The app ships with
-the browser assets it needs for the default custom-WASM reconstruction path.
 
 Do not open `index.html` by double-clicking it. Browser camera access and local
 WASM/model loading are more reliable from `http://localhost` than from a
@@ -61,8 +61,8 @@ WASM/model loading are more reliable from `http://localhost` than from a
 ![gelsight_thumb_loop.gif](images/gelsight_thumb_loop.gif)
 
 1. Plug in the GelSight Mini.
-2. Open the tool in the browser: `http://127.0.0.1:8002/gelsight_p5/`
-3. Choose the GelSight Mini from the camera menu.
+2. Open the software tool in the browser, either served locally (`http://127.0.0.1:8002/gelsight_p5/`) as described above, or on this page: [https://golanlevin.github.io/gelsight_p5/](https://golanlevin.github.io/gelsight_p5/). *Note: all captures made on that page remain local to your machine.*
+3. Choose the GelSight Mini from the Camera menu.
 4. Choose a capture resolution. The default is intended to balance quality and
    speed.
 5. Click `Enable Camera` and allow browser camera access if prompted.
