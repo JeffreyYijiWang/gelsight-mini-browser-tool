@@ -4,7 +4,7 @@
 from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile sensor.
 * Created by Golan Levin at CMU's Frank-Ratchye STUDIO for Creative Inquiry, August 2026.
 
-![gelsight_demo_screenshot.png](images/gelsight_demo_screenshot.png)
+![gelsight_coin_loop.gif](images/gelsight_coin_loop.gif)
 
 #### Quick Links
 
@@ -22,11 +22,15 @@ from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile 
 The [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) is a [\$500 tactile sensor](https://www.gelsight.com/product/gelsight-mini-system/) which presents to the computer as a standard UVC webcam. The browser captures its live video stream, estimates a depth map from the colored tactile image, displays a 3D mesh preview, and exports captures as ZIP files containing images, depth maps, OBJ meshes, calibration data, and metadata.
 
 
+---
+
 ## What You Need
 
 - A GelSight Mini tactile sensor connected by USB.
 - A recent desktop browser. Chrome is recommended.
 - A local web server. The browser camera API works from `localhost`.
+
+--- 
 
 ## First-Time Setup
 
@@ -50,7 +54,11 @@ Do not open `index.html` by double-clicking it. Browser camera access and local
 WASM/model loading are more reliable from `http://localhost` than from a
 `file://` URL.
 
+---
+
 ## How To Use The Tool
+
+![gelsight_thumb_loop.gif](images/gelsight_thumb_loop.gif)
 
 1. Plug in the GelSight Mini.
 2. Open the tool in the browser: `http://127.0.0.1:8002/gelsight_p5/`
@@ -74,6 +82,8 @@ WASM/model loading are more reliable from `http://localhost` than from a
 11. If the `Calibrate` button pulses, recalibrate before trusting measurements. Changes such as crop or lambda can make the current calibration stale.
 12. Click `Export` to save a ZIP file. This contains the exported files listed below. 
 
+---
+
 ## Exported Files
 
 Exports are named like:
@@ -92,9 +102,13 @@ The ZIP can include:
 - `mesh.obj`: exported 3D mesh.
 - `metadata.json`: capture, calibration, processing, and export metadata.
 
+---
+
 ## Demo Mode
 
-The `Demo` button loads a sample export from `gelsight_p5/captures/`. This is
+![gelsight_demo_screenshot.png](images/gelsight_demo_screenshot.png)
+
+The `Demo` button loads a sample export from `gelsight_p5/captures/`, a scan of a US coin. This is
 useful for trying the interface without a connected sensor. When Demo mode is
 active, the button changes to `Live`; click it to return to the camera.
 
