@@ -41,6 +41,13 @@ const url = process.argv[2] || "http://127.0.0.1:8000/";
     exportDisabled: [...document.querySelectorAll("button")].find(
       (button) => button.textContent === "Export",
     )?.disabled,
+    sourceLink: {
+      text: document.querySelector("#app-version a")?.textContent || null,
+      href: document.querySelector("#app-version a")?.href || null,
+      literalMarkupVisible:
+        document.querySelector("#app-version")?.textContent.includes("<a href=") ||
+        false,
+    },
   }));
   await page.getByText("Demo", { exact: true }).click();
   await page.waitForFunction(
@@ -218,6 +225,14 @@ const url = process.argv[2] || "http://127.0.0.1:8000/";
       `camera-gated buttons were not disabled: ${JSON.stringify(result)}`,
     );
   }
+  if (
+    result.initialButtons.sourceLink.text !== "Source" ||
+    result.initialButtons.sourceLink.href !==
+      "https://github.com/CreativeInquiry/gelsight-mini-browser-tool" ||
+    result.initialButtons.sourceLink.literalMarkupVisible
+  ) {
+    throw new Error(`source link was not rendered correctly: ${JSON.stringify(result)}`);
+  }
   if (result.demoButtonAfterLoad !== "Live") {
     throw new Error(`demo button did not switch to Live: ${JSON.stringify(result)}`);
   }
@@ -257,8 +272,8 @@ const url = process.argv[2] || "http://127.0.0.1:8000/";
   }
   if (
     result.metadataChecks.schema !== "gelsight-mini-export-v2" ||
-    result.metadataChecks.version !== "1.034" ||
-    result.metadataChecks.appVersion !== "1.034" ||
+    result.metadataChecks.version !== "1.035" ||
+    result.metadataChecks.appVersion !== "1.035" ||
     result.metadataChecks.sourceMode !== "demo" ||
     !result.metadataChecks.hasExportProcess ||
     !result.metadataChecks.hasLiveDisplay ||
