@@ -1,20 +1,26 @@
 # GelSight-Mini View/Export Tool
 
-This is a browser-based tool for viewing, reconstructing, and exporting data
-from a GelSight Mini tactile sensor.
+* This is a browser-based tool for viewing, reconstructing, and exporting data
+from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile sensor.
+* Created by Golan Levin at CMU's Frank-Ratchye STUDIO for Creative Inquiry, August 2026.
 
 ![gelsight_demo_screenshot.png](images/gelsight_demo_screenshot.png)
+
+#### Quick Links
+
+* [**Purchase** a GelSight Mini](https://www.gelsight.com/product/gelsight-mini-system/) (~\$500)
+* [**Test** the Gelsight Mini browser tool, online](https://golanlevin.github.io/gelsight_p5/)
+* [**View** a brief YouTube tutorial here](https://www.youtube.com/watch?v=4apYlLzpnoo)
+* [**Read** technical documentation here](technical_information_js.md)
 
 ---
 
 ## Overview
 
-The GelSight family of tactile sensors are vision-based touch sensors that transform physical contact into high-resolution 3D measurements of surface geometry. Rather than relying on arrays of pressure sensors, a GelSight device contains a soft, transparent elastomer coated with a reflective membrane; when pressed against an object, the gel conforms to its microscopic topography, and an internal camera with colored LED illumination images the resulting deformation. Using photometric stereo, the system reconstructs a micron-scale 3D height map. Because the sensing process depends on geometry rather than optical appearance, GelSight can accurately inspect opaque, reflective, transparent, or textured materials with sub-micron depth sensitivity.
+> The GelSight family of tactile sensors are vision-based touch sensors that transform physical contact into high-resolution 3D measurements of surface geometry. Rather than relying on arrays of pressure sensors, a GelSight device contains a soft, transparent elastomer coated with a reflective membrane; when pressed against an object, the gel conforms to its microscopic topography, and an internal camera with colored LED illumination images the resulting deformation. Using photometric stereo, the system reconstructs a micron-scale 3D height map. Because the sensing process depends on geometry rather than optical appearance, GelSight can accurately inspect opaque, reflective, transparent, or textured materials with sub-micron depth sensitivity.
 
-The GelSight Mini presents to the computer as a standard UVC webcam. The browser
-captures its live video stream, estimates a depth map from the colored tactile
-image, displays a 3D mesh preview, and exports captures as ZIP files containing
-images, depth maps, OBJ meshes, calibration data, and metadata.
+The [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) is a [\$500 tactile sensor](https://www.gelsight.com/product/gelsight-mini-system/) which presents to the computer as a standard UVC webcam. The browser captures its live video stream, estimates a depth map from the colored tactile image, displays a 3D mesh preview, and exports captures as ZIP files containing images, depth maps, OBJ meshes, calibration data, and metadata.
+
 
 ## What You Need
 
@@ -47,44 +53,26 @@ WASM/model loading are more reliable from `http://localhost` than from a
 ## How To Use The Tool
 
 1. Plug in the GelSight Mini.
-
-2. Open the tool in the browser:
-
-   ```text
-   http://127.0.0.1:8002/gelsight_p5/
-   ```
-
+2. Open the tool in the browser: `http://127.0.0.1:8002/gelsight_p5/`
 3. Choose the GelSight Mini from the camera menu.
-
 4. Choose a capture resolution. The default is intended to balance quality and
    speed.
-
 5. Click `Enable Camera` and allow browser camera access if prompted.
-
-6. Adjust the crop rectangle over the useful part of the GelSight image.
-
+6. Optionally, adjust the crop rectangle over the useful part of the GelSight image.
 7. With nothing touching the gel surface, click `Calibrate`.
-
 8. Wait for calibration to finish. Do not touch the sensor while it says
    `CALIBRATING`.
-
 9. Press an object into the GelSight surface. The tool will show:
-
    - the live GelSight camera image
    - an estimated depth image
    - a 3D mesh preview
-
 10. Use the controls as needed:
-
     - `Fast (160x120)` / `Full (320x240)` changes inference quality.
     - `Lambda` adjusts Poisson integration regularization.
     - `Alpha` adjusts temporal smoothing.
     - The vertical `Z` slider changes only the 3D preview scale.
-
-11. If the `Calibrate` button pulses, recalibrate before trusting measurements.
-    Changes such as crop or lambda can make the current calibration stale.
-
-12. Click `Export` to save a ZIP file.
+11. If the `Calibrate` button pulses, recalibrate before trusting measurements. Changes such as crop or lambda can make the current calibration stale.
+12. Click `Export` to save a ZIP file. This contains the exported files listed below. 
 
 ## Exported Files
 
@@ -121,7 +109,5 @@ active, the button changes to `Live`; click it to return to the camera.
 
 ## License
 
-This project is intended to be distributed under GPL-3.0-or-later.
-
-See the technical documentation for notes about redistributed GelSight-derived
+This project is intended to be distributed under GPL-3.0-or-later. See the [technical documentation](technical_information_js.md) for notes about redistributed GelSight-derived
 model assets and third-party browser/runtime components.
