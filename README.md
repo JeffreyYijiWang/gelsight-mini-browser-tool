@@ -8,7 +8,7 @@ from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile 
 #### Quick Links
 
 * [**Purchase** a GelSight Mini](https://www.gelsight.com/product/gelsight-mini-system/) (~\$500-600)
-* [**Test** the Gelsight Mini browser tool, online](https://golanlevin.github.io/gelsight_p5/)
+* [**Test** the GelSight Mini browser tool, online](https://golanlevin.github.io/gelsight_p5/)
 * [**View** a brief YouTube tutorial here](https://www.youtube.com/watch?v=4apYlLzpnoo)
 * [**Read** the technical documentation here](technical_information_js.md)
 * [**Watch** Steve Mould's video about GelSight](https://www.youtube.com/watch?v=qtQ4rK66vlE)
