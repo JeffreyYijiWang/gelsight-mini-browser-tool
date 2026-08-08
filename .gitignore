@@ -50,6 +50,7 @@ python/out/
 # Local notes and large walkthrough captures
 notes.txt
 gelsight_mini_walkthrough.mov
+video/
 
 # Upstream/vendor reference code drop
 gsrobotics/
