@@ -1,0 +1,10 @@
+{
+  "name": "gelsight-material-studio",
+  "private": true,
+  "scripts": {
+    "setup:web": "node tools/setup-studio-web.mjs",
+    "test:browser": "node tools/verify-studio.mjs"
+  },
+  "dependencies": { "three": "0.180.0" },
+  "devDependencies": { "playwright": "1.55.1" }
+}

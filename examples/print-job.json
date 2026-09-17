@@ -1,0 +1,15 @@
+{
+  "source_id": "REPLACE_WITH_LOCAL_PATCH_ID",
+  "settings": {
+    "shape": "rectangle",
+    "scale_mode": "uniform",
+    "xy_scale": 5,
+    "z_scale": 5,
+    "base_mm": 2,
+    "tolerance_mm": 0.03,
+    "triangle_budget": 120000,
+    "holes": "exclude",
+    "width_mm": 50,
+    "relief_mm": 1
+  }
+}

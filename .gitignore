@@ -29,6 +29,13 @@ env/
 ENV/
 python/.venv/
 python/venv/
+.venv-studio/
+studio-data/
+studio/web/vendor/
+examples/generated/
+test-artifacts/
+texture-dictionary/preview/
+texture-dictionary/.sites-runtime/
 
 # Node dependencies and local package-manager state
 node_modules/

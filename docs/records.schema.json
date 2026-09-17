@@ -1,0 +1,1557 @@
+{
+  "schema_version": "material-studio/1",
+  "records": {
+    "CaptureSession": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "default": "Untitled session",
+          "title": "Name",
+          "type": "string"
+        },
+        "region": {
+          "default": "custom",
+          "title": "Region",
+          "type": "string"
+        },
+        "sensor_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sensor Id"
+        },
+        "gel_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gel Id"
+        },
+        "force_n": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Force N"
+        },
+        "posture_notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Posture Notes"
+        },
+        "frame_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Frame Ids",
+          "type": "array"
+        },
+        "baseline_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseline Id"
+        },
+        "synthetic": {
+          "default": false,
+          "title": "Synthetic",
+          "type": "boolean"
+        }
+      },
+      "title": "CaptureSession",
+      "type": "object"
+    },
+    "Frame": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "session_id": {
+          "title": "Session Id",
+          "type": "string"
+        },
+        "source_name": {
+          "title": "Source Name",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "order": {
+          "title": "Order",
+          "type": "integer"
+        },
+        "width": {
+          "title": "Width",
+          "type": "integer"
+        },
+        "height": {
+          "title": "Height",
+          "type": "integer"
+        },
+        "timestamp_seconds": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timestamp Seconds"
+        },
+        "raw_file": {
+          "title": "Raw File",
+          "type": "string"
+        },
+        "kind": {
+          "default": "rgb",
+          "enum": [
+            "rgb",
+            "height",
+            "normal",
+            "mesh"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "quality": {
+          "additionalProperties": true,
+          "title": "Quality",
+          "type": "object"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        }
+      },
+      "required": [
+        "session_id",
+        "source_name",
+        "sha256",
+        "order",
+        "width",
+        "height",
+        "raw_file"
+      ],
+      "title": "Frame",
+      "type": "object"
+    },
+    "CalibrationProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "sensor_id": {
+          "title": "Sensor Id",
+          "type": "string"
+        },
+        "gel_id": {
+          "title": "Gel Id",
+          "type": "string"
+        },
+        "width": {
+          "exclusiveMinimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "height": {
+          "exclusiveMinimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "pixel_spacing_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Pixel Spacing Mm",
+          "type": "array"
+        },
+        "adapter": {
+          "default": "mini_mlp",
+          "enum": [
+            "mini_mlp",
+            "torchscript",
+            "polynomial"
+          ],
+          "title": "Adapter",
+          "type": "string"
+        },
+        "weights": {
+          "title": "Weights",
+          "type": "string"
+        },
+        "validated": {
+          "default": false,
+          "title": "Validated",
+          "type": "boolean"
+        },
+        "validation_notes": {
+          "default": "",
+          "title": "Validation Notes",
+          "type": "string"
+        },
+        "camera_matrix": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Camera Matrix"
+        },
+        "distortion": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Distortion"
+        },
+        "normal_convention": {
+          "default": "image_y_down",
+          "enum": [
+            "image_y_down",
+            "surface_y_up"
+          ],
+          "title": "Normal Convention",
+          "type": "string"
+        },
+        "object_sign": {
+          "default": 1,
+          "enum": [
+            -1,
+            1
+          ],
+          "title": "Object Sign",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "sensor_id",
+        "gel_id",
+        "width",
+        "height",
+        "pixel_spacing_mm",
+        "weights"
+      ],
+      "title": "CalibrationProfile",
+      "type": "object"
+    },
+    "SurfacePatch": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "region": {
+          "default": "custom",
+          "title": "Region",
+          "type": "string"
+        },
+        "source_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Session Id"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Id"
+        },
+        "state": {
+          "default": "uncalibrated",
+          "enum": [
+            "calibrated",
+            "uncalibrated"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "units": {
+          "default": "relative",
+          "enum": [
+            "mm",
+            "relative"
+          ],
+          "title": "Units",
+          "type": "string"
+        },
+        "pixel_spacing": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pixel Spacing"
+        },
+        "calibration_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calibration Id"
+        },
+        "validation_notes": {
+          "default": "",
+          "title": "Validation Notes",
+          "type": "string"
+        },
+        "synthetic": {
+          "default": false,
+          "title": "Synthetic",
+          "type": "boolean"
+        },
+        "version": {
+          "default": "original",
+          "title": "Version",
+          "type": "string"
+        },
+        "width": {
+          "title": "Width",
+          "type": "integer"
+        },
+        "height": {
+          "title": "Height",
+          "type": "integer"
+        },
+        "arrays": {
+          "default": "",
+          "title": "Arrays",
+          "type": "string"
+        },
+        "height_reference": {
+          "default": "imported reference preserved; positive is object relief outwards",
+          "title": "Height Reference",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "provenance": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Provenance",
+          "type": "array"
+        },
+        "quality": {
+          "additionalProperties": true,
+          "title": "Quality",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "width",
+        "height"
+      ],
+      "title": "SurfacePatch",
+      "type": "object"
+    },
+    "Atlas": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "source_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "islands": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Islands",
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Links",
+          "type": "array"
+        },
+        "rejected_frames": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Rejected Frames",
+          "type": "array"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "mode": {
+          "default": "planar appearance atlas",
+          "title": "Mode",
+          "type": "string"
+        },
+        "measurement_scope": {
+          "default": "calibrated source patches only",
+          "title": "Measurement Scope",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "source_ids",
+        "islands",
+        "links"
+      ],
+      "title": "Atlas",
+      "type": "object"
+    },
+    "MaterialAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "patch_id": {
+          "title": "Patch Id",
+          "type": "string"
+        },
+        "region": {
+          "default": "custom",
+          "title": "Region",
+          "type": "string"
+        },
+        "synthetic": {
+          "default": false,
+          "title": "Synthetic",
+          "type": "boolean"
+        },
+        "state": {
+          "default": "uncalibrated",
+          "title": "State",
+          "type": "string"
+        },
+        "directory": {
+          "default": "",
+          "title": "Directory",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "maps": {
+          "additionalProperties": true,
+          "title": "Maps",
+          "type": "object"
+        },
+        "descriptor": {
+          "additionalProperties": true,
+          "title": "Descriptor",
+          "type": "object"
+        },
+        "provenance": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Provenance",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "patch_id"
+      ],
+      "title": "MaterialAsset",
+      "type": "object"
+    },
+    "PrinterProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "process": {
+          "enum": [
+            "FDM",
+            "resin"
+          ],
+          "title": "Process",
+          "type": "string"
+        },
+        "build_volume_mm": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Build Volume Mm",
+          "type": "array"
+        },
+        "layer_height_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Layer Height Mm",
+          "type": "number"
+        },
+        "lateral_limit_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Lateral Limit Mm",
+          "type": "number"
+        },
+        "min_raised_line_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Min Raised Line Mm",
+          "type": "number"
+        },
+        "min_groove_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Min Groove Mm",
+          "type": "number"
+        },
+        "min_wall_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Min Wall Mm",
+          "type": "number"
+        },
+        "source_notes": {
+          "minLength": 1,
+          "title": "Source Notes",
+          "type": "string"
+        },
+        "orientation_notes": {
+          "default": "Texture facing upwards; keep supports off the texture where practical.",
+          "title": "Orientation Notes",
+          "type": "string"
+        },
+        "support_settings": {
+          "additionalProperties": true,
+          "title": "Support Settings",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "process",
+        "build_volume_mm",
+        "layer_height_mm",
+        "lateral_limit_mm",
+        "min_raised_line_mm",
+        "min_groove_mm",
+        "min_wall_mm",
+        "source_notes"
+      ],
+      "title": "PrinterProfile",
+      "type": "object"
+    },
+    "MeshValidationReport": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "checks": {
+          "additionalProperties": true,
+          "title": "Checks",
+          "type": "object"
+        },
+        "errors": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "dimensions_mm": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Dimensions Mm",
+          "type": "array"
+        },
+        "volume_mm3": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Volume Mm3"
+        },
+        "triangles": {
+          "default": 0,
+          "title": "Triangles",
+          "type": "integer"
+        },
+        "components": {
+          "default": 0,
+          "title": "Components",
+          "type": "integer"
+        },
+        "geometry_valid": {
+          "default": false,
+          "title": "Geometry Valid",
+          "type": "boolean"
+        },
+        "print_ready": {
+          "default": false,
+          "title": "Print Ready",
+          "type": "boolean"
+        },
+        "fidelity": {
+          "additionalProperties": true,
+          "title": "Fidelity",
+          "type": "object"
+        },
+        "printer_assessment": {
+          "additionalProperties": true,
+          "title": "Printer Assessment",
+          "type": "object"
+        },
+        "slicing": {
+          "default": "unverified",
+          "title": "Slicing",
+          "type": "string"
+        },
+        "physical_printing": {
+          "default": "unverified",
+          "title": "Physical Printing",
+          "type": "string"
+        }
+      },
+      "title": "MeshValidationReport",
+      "type": "object"
+    },
+    "PrintProject": {
+      "$defs": {
+        "MeshValidationReport": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "title": "Id",
+              "type": "string"
+            },
+            "created_at": {
+              "title": "Created At",
+              "type": "string"
+            },
+            "checks": {
+              "additionalProperties": true,
+              "title": "Checks",
+              "type": "object"
+            },
+            "errors": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Errors",
+              "type": "array"
+            },
+            "warnings": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Warnings",
+              "type": "array"
+            },
+            "dimensions_mm": {
+              "items": {
+                "type": "number"
+              },
+              "title": "Dimensions Mm",
+              "type": "array"
+            },
+            "volume_mm3": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Volume Mm3"
+            },
+            "triangles": {
+              "default": 0,
+              "title": "Triangles",
+              "type": "integer"
+            },
+            "components": {
+              "default": 0,
+              "title": "Components",
+              "type": "integer"
+            },
+            "geometry_valid": {
+              "default": false,
+              "title": "Geometry Valid",
+              "type": "boolean"
+            },
+            "print_ready": {
+              "default": false,
+              "title": "Print Ready",
+              "type": "boolean"
+            },
+            "fidelity": {
+              "additionalProperties": true,
+              "title": "Fidelity",
+              "type": "object"
+            },
+            "printer_assessment": {
+              "additionalProperties": true,
+              "title": "Printer Assessment",
+              "type": "object"
+            },
+            "slicing": {
+              "default": "unverified",
+              "title": "Slicing",
+              "type": "string"
+            },
+            "physical_printing": {
+              "default": "unverified",
+              "title": "Physical Printing",
+              "type": "string"
+            }
+          },
+          "title": "MeshValidationReport",
+          "type": "object"
+        },
+        "PrinterProfile": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "title": "Id",
+              "type": "string"
+            },
+            "created_at": {
+              "title": "Created At",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "process": {
+              "enum": [
+                "FDM",
+                "resin"
+              ],
+              "title": "Process",
+              "type": "string"
+            },
+            "build_volume_mm": {
+              "maxItems": 3,
+              "minItems": 3,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "title": "Build Volume Mm",
+              "type": "array"
+            },
+            "layer_height_mm": {
+              "exclusiveMinimum": 0,
+              "title": "Layer Height Mm",
+              "type": "number"
+            },
+            "lateral_limit_mm": {
+              "exclusiveMinimum": 0,
+              "title": "Lateral Limit Mm",
+              "type": "number"
+            },
+            "min_raised_line_mm": {
+              "exclusiveMinimum": 0,
+              "title": "Min Raised Line Mm",
+              "type": "number"
+            },
+            "min_groove_mm": {
+              "exclusiveMinimum": 0,
+              "title": "Min Groove Mm",
+              "type": "number"
+            },
+            "min_wall_mm": {
+              "exclusiveMinimum": 0,
+              "title": "Min Wall Mm",
+              "type": "number"
+            },
+            "source_notes": {
+              "minLength": 1,
+              "title": "Source Notes",
+              "type": "string"
+            },
+            "orientation_notes": {
+              "default": "Texture facing upwards; keep supports off the texture where practical.",
+              "title": "Orientation Notes",
+              "type": "string"
+            },
+            "support_settings": {
+              "additionalProperties": true,
+              "title": "Support Settings",
+              "type": "object"
+            }
+          },
+          "required": [
+            "name",
+            "process",
+            "build_volume_mm",
+            "layer_height_mm",
+            "lateral_limit_mm",
+            "min_raised_line_mm",
+            "min_groove_mm",
+            "min_wall_mm",
+            "source_notes"
+          ],
+          "title": "PrinterProfile",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "default": "patch",
+          "enum": [
+            "patch",
+            "mesh"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "directory": {
+          "default": "",
+          "title": "Directory",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "transforms": {
+          "additionalProperties": true,
+          "title": "Transforms",
+          "type": "object"
+        },
+        "repairs": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Repairs",
+          "type": "array"
+        },
+        "printer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrinterProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "report": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MeshValidationReport"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "exports": {
+          "additionalProperties": true,
+          "title": "Exports",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "source_id"
+      ],
+      "title": "PrintProject",
+      "type": "object"
+    },
+    "ExportManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "schema_version": {
+          "default": "material-studio/1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "selected_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Selected Ids",
+          "type": "array"
+        },
+        "files": {
+          "additionalProperties": true,
+          "title": "Files",
+          "type": "object"
+        },
+        "raw_captures_included": {
+          "default": false,
+          "title": "Raw Captures Included",
+          "type": "boolean"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "selected_ids"
+      ],
+      "title": "ExportManifest",
+      "type": "object"
+    },
+    "Specimen": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "slug": {
+          "title": "Slug",
+          "type": "string"
+        },
+        "accession": {
+          "title": "Accession",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "category": {
+          "default": "other",
+          "title": "Category",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "body_region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Body Region"
+        },
+        "common_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Common Name"
+        },
+        "scientific_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scientific Name"
+        },
+        "collection_timestamp": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Collection Timestamp"
+        },
+        "public_location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Public Location"
+        },
+        "notes": {
+          "default": "",
+          "title": "Notes",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_kind": {
+          "default": "patch",
+          "enum": [
+            "patch",
+            "frame"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "atlas_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Atlas Id"
+        },
+        "calibration_status": {
+          "default": "uncalibrated",
+          "title": "Calibration Status",
+          "type": "string"
+        },
+        "source_dimensions_mm": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Dimensions Mm"
+        },
+        "synthetic": {
+          "default": false,
+          "title": "Synthetic",
+          "type": "boolean"
+        },
+        "state": {
+          "default": "draft",
+          "enum": [
+            "draft",
+            "published",
+            "archived"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "impression_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Impression Ids",
+          "type": "array"
+        },
+        "cover_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cover Id"
+        },
+        "material_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material Id"
+        },
+        "print_project_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Print Project Id"
+        },
+        "related_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Ids",
+          "type": "array"
+        },
+        "public_assets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Public Assets",
+          "type": "array"
+        },
+        "downloads": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Downloads",
+          "type": "array"
+        },
+        "license": {
+          "default": "All rights reserved",
+          "title": "License",
+          "type": "string"
+        },
+        "attribution": {
+          "default": "",
+          "title": "Attribution",
+          "type": "string"
+        },
+        "fabrication_status": {
+          "default": "model only",
+          "enum": [
+            "not recorded",
+            "model only",
+            "owner reports printed"
+          ],
+          "title": "Fabrication Status",
+          "type": "string"
+        },
+        "published_revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published Revision"
+        },
+        "updated_at": {
+          "title": "Updated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slug",
+        "accession",
+        "title",
+        "source_id"
+      ],
+      "title": "Specimen",
+      "type": "object"
+    },
+    "ImpressionVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "title": "Created At",
+          "type": "string"
+        },
+        "specimen_id": {
+          "title": "Specimen Id",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "source_version": {
+          "title": "Source Version",
+          "type": "string"
+        },
+        "source_sha256": {
+          "title": "Source Sha256",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "title": "Settings",
+          "type": "object"
+        },
+        "seed": {
+          "default": 7,
+          "title": "Seed",
+          "type": "integer"
+        },
+        "pixel_size": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Pixel Size",
+          "type": "array"
+        },
+        "print_size_mm": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Print Size Mm",
+          "type": "array"
+        },
+        "reproduction_magnification": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reproduction Magnification"
+        },
+        "source_dimensions_mm": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Dimensions Mm"
+        },
+        "palette": {
+          "additionalProperties": true,
+          "title": "Palette",
+          "type": "object"
+        },
+        "directory": {
+          "title": "Directory",
+          "type": "string"
+        },
+        "thumbnail": {
+          "default": "thumbnail.webp",
+          "title": "Thumbnail",
+          "type": "string"
+        },
+        "exports": {
+          "additionalProperties": true,
+          "title": "Exports",
+          "type": "object"
+        },
+        "interpretation": {
+          "default": "height-based artistic ink coverage; not measured ink physics",
+          "title": "Interpretation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "specimen_id",
+        "source_id",
+        "source_version",
+        "source_sha256",
+        "settings",
+        "pixel_size",
+        "print_size_mm",
+        "palette",
+        "directory"
+      ],
+      "title": "ImpressionVariant",
+      "type": "object"
+    }
+  }
+}

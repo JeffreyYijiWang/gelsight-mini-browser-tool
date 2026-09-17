@@ -1,0 +1,5 @@
+{
+  "units": "mm",
+  "pixel_spacing": [0.05, 0.05],
+  "validation_notes": "EXAMPLE ONLY: replace spacing and this note with your independently verified import provenance."
+}

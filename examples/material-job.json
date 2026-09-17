@@ -1,0 +1,12 @@
+{
+  "patch_id": "REPLACE_WITH_LOCAL_PATCH_ID",
+  "settings": {
+    "name": "My captured surface",
+    "color": "#929795",
+    "roughness": 0.62,
+    "roughness_mode": "constant",
+    "frequency_split": 3,
+    "edge_falloff": 0.15,
+    "grain_contrast": 1
+  }
+}

@@ -1,5 +1,15 @@
 # GelSight-Mini View/Export Tool
 
+## Material Studio and Texture Dictionary
+
+The new [Material Studio guide](docs/studio.md) covers the local capture, atlas,
+material/brush, print, gallery and specimen workflows. Start with
+`./start-studio.ps1` after its one-time setup, then open http://127.0.0.1:8090.
+The original viewer below is preserved. Important implementation and publication
+decisions are tracked in [AGENTS.md](AGENTS.md); verification is recorded in
+[studio-validation.md](docs/studio-validation.md). The public collection is empty
+by owner request; example captures remain local drafts.
+
 > This is a browser-based tool for viewing, reconstructing, and exporting data
 from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile sensor. This work was created by Golan Levin at CMU's Frank-Ratchye STUDIO for Creative Inquiry, August 2026.
 
