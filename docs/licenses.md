@@ -27,7 +27,9 @@ version being redistributed. Transitive compiled wheels can include further noti
 | lib3mf | BSD-2-Clause; actual unit-aware 3MF writing/reloading |
 | manifold3d | Apache-2.0; solid booleans and bounded simplification |
 | Three.js | MIT; interactive material/mesh rendering |
-| Playwright | Apache-2.0; browser validation only |
+| Playwright | Apache-2.0; dedicated local Chrome launcher and browser validation |
+| ShuffleSnap 0.3.0 | MIT, Kyle McDonald; local grid assignment (https://github.com/kylemcdonald/shufflesnap) |
+| cv2-enumerate-cameras 1.3.4 | MIT; local named-camera diagnostics |
 | Optional PyTorch | BSD-style, additional dependency notices; supplied TorchScript models only |
 
 `npm run setup:web` copies Three.js and its LICENSE locally so gallery/dictionary

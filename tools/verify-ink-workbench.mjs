@@ -1,0 +1,73 @@
+import {chromium} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+const origin=process.argv[2]||'http://127.0.0.1:8090',report={},errors=[];
+await mkdir('test-artifacts',{recursive:true});
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const context=await browser.newContext({acceptDownloads:true,viewport:{width:1440,height:1000}}),page=await context.newPage();
+page.on('pageerror',error=>errors.push(error.message));
+try{
+  await page.goto(origin+'/#dictionary',{waitUntil:'networkidle'});
+  await page.waitForFunction(()=>document.querySelector('#workspace')?.getAttribute('aria-busy')==='false');
+  const token=await page.locator('meta[name="studio-token"]').getAttribute('content');
+  const api=async(route,body,method='POST')=>{const response=await context.request.fetch(origin+'/api'+route,{method,headers:{'X-Studio-Token':token},data:body});const data=await response.json();if(!response.ok())throw new Error(JSON.stringify(data));return data;};
+  const state=await api('/state',undefined,'GET');
+  const source=state.patches.find(p=>!p.synthetic)||state.patches[0];
+  if(!source)throw new Error('Import a surface before running this workbench test.');
+  const specimen=await api('/specimens',{source_id:source.id,title:'Private print-workbench verification'});
+  await page.reload({waitUntil:'networkidle'});
+  await page.locator(`[data-action="select-specimen"][data-id="${specimen.id}"]`).click();
+  await page.waitForFunction(id=>document.querySelector('#specimen-form')?.dataset.specimenId===id&&document.querySelector('#workspace')?.getAttribute('aria-busy')==='false',specimen.id);
+  const form=page.locator('#ink-form');
+  await form.locator('[data-ink-preset]').selectOption('indigo');
+  await form.locator('[name="rotation"]').fill('23');
+  await form.locator('summary').click();
+  await form.locator('[name="crop"]').fill('0.1,0.15,0.9,0.95');
+  await form.locator('[name="output_px"]').fill('384');
+  await form.locator('[name="seed"]').fill('42');
+  await form.locator('[name="pressure"]').fill('0.64');
+  const live=page.waitForResponse(r=>r.url().endsWith('/ink-preview')&&r.ok());
+  await form.getByRole('button',{name:'Live pressure preview',exact:true}).click();await live;
+  await page.waitForFunction(()=>document.querySelector('[data-preview-status]')?.textContent.includes('same source-space'));
+  await form.getByRole('button',{name:'Save new impression variant',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('#job-panel')?.hidden===false);
+  await page.waitForFunction(()=>document.querySelector('#job-panel')?.hidden===true,null,{timeout:60000});
+  await page.waitForFunction(()=>document.querySelector('#workspace')?.getAttribute('aria-busy')==='false');
+  const updated=await api('/state',undefined,'GET'),saved=updated.impressions.findLast(v=>v.specimen_id===specimen.id);
+  if(!saved||saved.settings.engine_version!==2||saved.settings.seed!==42)throw new Error('Full recipe was not saved');
+  for(const [key,value] of Object.entries({pigment:'#243b59',paper:'#f3eedf',rotation:'23',crop:'0.1,0.15,0.9,0.95',output_px:'384',seed:'42',pressure:'0.64'})){
+    if(await form.locator(`[name="${key}"]`).inputValue()!==value)throw new Error('Restored value differs: '+key);
+  }
+  await form.locator('[name="pigment"]').fill('#113355');
+  await form.locator('summary').click();
+  await form.locator('[name="seed"]').fill('99');
+  await form.locator('[data-ink-recipe]').selectOption(saved.id);
+  if(await form.locator('[name="seed"]').inputValue()!=='42'||await form.locator('[name="pigment"]').inputValue()!=='#243b59')throw new Error('Saved recipe restore failed');
+  report.saved_recipe_restored=true;
+  const proof=page.waitForResponse(r=>r.url().endsWith('/pressure-proof'));
+  await form.getByRole('button',{name:'Make pressure proof',exact:true}).click();
+  if(!(await proof).ok())throw new Error('Pressure proof failed');
+  await form.locator('[data-proof-download]').waitFor({state:'visible'});
+  const download=page.waitForEvent('download');await form.locator('[data-proof-download]').click();report.proof_download=(await download).suggestedFilename();
+  await form.locator('.live-ink').screenshot({path:'test-artifacts/ink-pressure-proof.png'});
+  const afterProof=await api('/state',undefined,'GET');
+  if(afterProof.impressions.length!==updated.impressions.length)throw new Error('Proof saved an unwanted variant');
+  report.proof_is_read_only=true;
+  // A queued preview must never replace a source image after the user switches.
+  await form.locator('[name="pressure"]').fill('0.73');
+  await form.getByRole('button',{name:'Source relief / image',exact:true}).click();
+  await page.waitForTimeout(600);
+  if(!(await form.locator('.live-ink img').getAttribute('src')).includes('/image/height'))throw new Error('Stale preview replaced source view');
+  report.source_switch_cancels_pending_preview=true;
+  await form.locator('[name="style"]').selectOption('clean');
+  if(!await form.locator('[name="dry_brush"]').isDisabled())throw new Error('Clean style left artifacts active');
+  await form.locator('[name="style"]').selectOption('relief');
+  if(!await form.getByRole('button',{name:'Make pressure proof',exact:true}).isDisabled())throw new Error('Relief pressure proof should be unavailable');
+  await form.locator('[data-ink-recipe]').selectOption(saved.id);
+  await page.setViewportSize({width:390,height:844});
+  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw new Error('Mobile horizontal overflow');
+  await form.locator('.live-ink').screenshot({path:'test-artifacts/ink-workbench-mobile.png'});
+  report.mobile_no_overflow=true;report.public_entries=afterProof.specimens.filter(s=>s.state==='published').length;
+  if(report.public_entries||errors.length)throw new Error(JSON.stringify({errors,report}));
+  report.passed=true;
+}catch(error){report.error=error.stack;report.passed=false;process.exitCode=1;await page.screenshot({path:'test-artifacts/ink-workbench-failure.png',fullPage:true}).catch(()=>{});}
+finally{report.errors=errors;await writeFile('test-artifacts/ink-workbench-report.json',JSON.stringify(report,null,2));console.log(report);await browser.close();}

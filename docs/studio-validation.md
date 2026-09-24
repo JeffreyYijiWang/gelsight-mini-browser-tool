@@ -1,8 +1,8 @@
-# Verification — 2026-09-17
+# Verification — updated 2026-09-24
 
 ## Implemented and checked
 
-`python -m pytest -q`: **30 passed**. One non-failing deprecation warning originates
+`python -m pytest -q`: **49 passed**. One non-failing deprecation warning originates
 from Starlette's use of an AnyIO alias. Checks cover:
 
 - Flat/ramp normal orientation, DirectX sign, physical spacing, masked integration
@@ -52,6 +52,58 @@ thumbnails, compared two specimens with shared ink/scale/lighting, and downloade
 an explicitly enabled PNG. Zero page errors and zero public entries. Forms remain
 inert until handlers are ready, preventing premature native submissions at startup.
 
+## Gyotaku print continuation
+
+The print workbench adds four palette/presentation starting points, restores all
+saved recipe fields, exports three-pressure proof sheets, and exposes coverage,
+source-space layers and recipe downloads to the owner. The 13 added checks cover
+complete deterministic replay, retained engine-1 pixels, preview/master agreement
+at the same raster size, consistent PNG DPI/alpha, anisotropic metric dimensions,
+90°/45° rotated magnification, calibrated rulers, degenerate crops, read-only
+proofs, private endpoints, effect removal and missing-data/inversion handling.
+
+`node tools/verify-ink-workbench.mjs`: **passed** in installed Chrome. Checked
+palette selection, edited recipe save/restore, downloadable proof, no extra variant
+from proof generation, cancellation before switching back to source, style-specific
+controls, and 390 px layout without overflow. Zero page errors and zero published
+specimens. The complete Studio browser smoke test also passed after these changes.
+
+Three actual local coin studies were generated at 2400 pixels wide in soot,
+indigo and iron oxide palettes, with pressure proofs and complete recipes. They
+use the existing relative relief from the provided capture. Visual inspection
+confirmed distinct progressive contact, source detail and legible proof labels.
+The public site was not changed or redeployed during this continuation.
+
+## Live Mini and ShuffleSnap — 2026-09-24
+
+Windows detected **GelSight Mini R0B 65Y7-RDNB** with device status OK. An
+unrestricted installed-Chrome check opened that specifically named camera and
+read an actual **640×480** frame, saved privately for inspection. A restricted
+browser reported system permission denial; native Python/OpenCV enumerated the
+Mini but did not open it. The supported launcher therefore uses browser capture.
+`studio-data/logs/browser-status.json` confirmed the visible dedicated Chrome
+window was on Live Typology with the named Mini live at 640×480. No hardware
+baseline, known-depth calibration or physical surface classification was inferred.
+
+The six new numerical/API tests exercise the installed native ShuffleSnap 0.3.0
+solver, deterministic distinct-cell assignments, degenerate PCA inputs, immutable
+raw source hashes, private selected-only ZIP export, safe text, sensor-specific
+capture sessions, explicit baseline handling and protected endpoints. The full
+suite passed: **49 tests**, with the existing non-failing AnyIO deprecation warning.
+
+`node tools/verify-typology.mjs`: **passed**. Imported seven explicitly synthetic
+image fixtures, verified default exclusion/session filters, built the actual
+ShuffleSnap grid, inspected source images, downloaded the numbered PNG and private
+ZIP, reloaded the standalone board and checked 390 px layout. **Zero page errors;
+zero published entries.** A repeated test now waits for a unique newly generated
+board instead of matching a previous board with the same title.
+
+The complete Studio browser smoke test, original p5 viewer regression, synthetic
+example generator, JavaScript syntax checks and `git diff --check` also passed.
+The launcher was executed successfully and opens a separate Chrome profile without
+changing the everyday browser profile. See `mini-typology.md` for the user workflow,
+descriptor limitations, hardware troubleshooting and private export contents.
+
 ## Reproducible example artifacts
 
 Run `studio examples --data test-artifacts/example-data --output examples/generated`.
@@ -82,8 +134,9 @@ hosting service's terminal success response; the local build was tested separate
 
 ## Practical limits
 
-- No live GelSight hardware, independent metric sensor calibration, learned skin
-  model, Photoshop importer, slicer or physical print was tested. Slicing and physical
+- Live GelSight Mini video was verified in Chrome on 2026-09-24. No independent
+  metric sensor calibration, learned skin model, Photoshop importer, slicer or
+  physical print was tested. Slicing and physical
   fabrication remain explicitly unverified. No universal printer profile or G-code
   is supplied.
 - The atlas is a bounded planar mosaic, not a full GelSLAM reproduction. Artistic

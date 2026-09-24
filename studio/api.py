@@ -5,6 +5,7 @@ import io
 import json
 from pathlib import Path
 import secrets
+import threading
 
 import numpy as np
 from PIL import Image
@@ -22,10 +23,15 @@ ROOT=Path(__file__).resolve().parents[1]
 
 def create_app(data_dir=None):
     store=Store(data_dir or ROOT/'studio-data');token=secrets.token_urlsafe(32);jobs=Jobs(store)
+    ink_slots=threading.BoundedSemaphore(2)
+    from .camera import MiniCamera
+    camera=MiniCamera()
     @asynccontextmanager
     async def lifespan(app):
         yield
         jobs.close()
+        try:camera.close()
+        except ValueError:pass
     app=FastAPI(title="Material Studio local owner API",docs_url=None,redoc_url=None,openapi_url=None,lifespan=lifespan)
     app.state.store=store;app.state.token=token;app.state.jobs=jobs
     app.add_middleware(TrustedHostMiddleware,allowed_hosts=['127.0.0.1','localhost','testserver'])
@@ -53,7 +59,38 @@ def create_app(data_dir=None):
         response.headers['Cache-Control']='no-store';return response
     @app.get('/api/state')
     async def state():
-        return {kind:store.list(kind) for kind in ('sessions','frames','patches','materials','atlases','prints','calibrations','printers','specimens','impressions','jobs','exports')}
+        return {kind:store.list(kind) for kind in ('sessions','frames','patches','materials','atlases','prints','calibrations','printers','specimens','impressions','typologies','jobs','exports')}
+    @app.get('/api/camera/devices')
+    def camera_devices():
+        from .camera import devices
+        return devices()
+    @app.get('/api/camera/status')
+    def camera_status():return camera.status()
+    @app.post('/api/camera/connect')
+    def camera_connect(options:dict):return camera.connect(options.get('device_id'))
+    @app.post('/api/camera/disconnect')
+    def camera_disconnect():return camera.close()
+    @app.get('/api/camera/frame.jpg')
+    def camera_frame():return Response(camera.snapshot('.jpg'),media_type='image/jpeg')
+    @app.post('/api/camera/capture')
+    def camera_capture(options:dict):
+        from .camera import capture_frame
+        return capture_frame(store,camera,name=options.get('name',''),session_id=options.get('session_id'),baseline=bool(options.get('baseline',False)))
+    @app.post('/api/camera/browser-capture')
+    async def browser_capture(file:UploadFile=File(...),device_name:str=Form(...),device_id:str=Form(''),name:str=Form(''),session_id:str=Form(''),baseline:bool=Form(False)):
+        from .camera import save_capture
+        from .inputs import MAX_UPLOAD
+        data=await file.read(MAX_UPLOAD+1)
+        return save_capture(store,data,dict(name=device_name,id=device_id),name,session_id or None,baseline)
+    @app.get('/api/typology/items')
+    def typology_items():
+        from .typology import catalog
+        return catalog(store)
+    @app.get('/api/typology/thumbnail/{kind}/{record_id}')
+    def typology_thumbnail(kind:str,record_id:str):
+        from .typology import source_image
+        picture,_=source_image(store,kind,record_id);picture.thumbnail((256,256));out=io.BytesIO();picture.save(out,format='WEBP',quality=82)
+        return Response(out.getvalue(),media_type='image/webp')
     @app.get('/favicon.ico')
     async def favicon():return Response(status_code=204)
     @app.get('/api/health')
@@ -129,7 +166,7 @@ def create_app(data_dir=None):
         return FileResponse(store.path(frame['raw_file']))
     @app.get('/api/files/{kind}/{record_id}/{filename:path}')
     async def derived_file(kind:str,record_id:str,filename:str):
-        if kind not in ('materials','prints','impressions','atlases'):raise HTTPException(404)
+        if kind not in ('materials','prints','impressions','atlases','typologies'):raise HTTPException(404)
         record=store.get(kind,record_id)
         directory=store.path(f'atlases/{record_id}' if kind=='atlases' else record['directory'])
         path=(directory/filename).resolve()
@@ -146,10 +183,21 @@ def create_app(data_dir=None):
     async def edit(specimen_id:str,request:Request):
         from .dictionary import edit_specimen
         return edit_specimen(store,specimen_id,await request.json())
+    @app.get('/api/ink-settings')
+    def ink_settings():
+        from .ink import DEFAULTS, LEGACY_DEFAULTS, PRESETS
+        return dict(defaults=DEFAULTS, legacy_defaults=LEGACY_DEFAULTS, presets=PRESETS)
+    @app.post('/api/specimens/{specimen_id}/pressure-proof')
+    def ink_proof(specimen_id:str,settings:dict):
+        from .ink import pressure_proof
+        with ink_slots:
+            picture=pressure_proof(store,specimen_id,settings);out=io.BytesIO();picture.save(out,format='PNG',dpi=(152.4,152.4))
+        return Response(out.getvalue(),media_type='image/png',headers={'Content-Disposition':'attachment; filename="pressure-proof.png"'})
     @app.post('/api/specimens/{specimen_id}/ink-preview')
     def ink_preview(specimen_id:str,settings:dict):
         from .ink import preview_ink
-        picture=preview_ink(store,specimen_id,settings);out=io.BytesIO();picture.save(out,format='PNG')
+        with ink_slots:
+            picture=preview_ink(store,specimen_id,settings);out=io.BytesIO();picture.save(out,format='PNG')
         return Response(out.getvalue(),media_type='image/png')
     @app.post('/api/specimens/{specimen_id}/publish')
     async def publish(specimen_id:str):

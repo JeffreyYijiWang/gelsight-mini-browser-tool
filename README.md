@@ -10,6 +10,13 @@ decisions are tracked in [AGENTS.md](AGENTS.md); verification is recorded in
 [studio-validation.md](docs/studio-validation.md). The public collection is empty
 by owner request; example captures remain local drafts.
 
+For the connected Mini and image typologies, double-click
+**[Start-Material-Studio.cmd](Start-Material-Studio.cmd)**. It opens a dedicated
+Chrome window with the Mini connected and the **Live Typology** workspace ready.
+Capture named samples, select images and build a comparison grid using the actual
+[ShuffleSnap](https://github.com/kylemcdonald/shufflesnap) package.
+See [the capture and typology guide](docs/mini-typology.md). Everything remains local.
+
 > This is a browser-based tool for viewing, reconstructing, and exporting data
 from a [GelSight Mini](https://www.gelsight.com/products/gelsightmini/) tactile sensor. This work was created by Golan Levin at CMU's Frank-Ratchye STUDIO for Creative Inquiry, August 2026.
 

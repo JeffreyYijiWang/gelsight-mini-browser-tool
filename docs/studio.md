@@ -64,6 +64,67 @@ protect private APIs; it is not a remotely accessible multi-user admin server.
 The [public Texture Dictionary](https://texture-dictionary-gelsight-studio.jeffrey-yiji-wang.chatgpt.site)
 is deployed with zero specimens.
 
+## Developing gyotaku-inspired prints
+
+For live Mini acquisition and ShuffleSnap comparison boards, see
+[Mini capture and typologies](mini-typology.md). Double-click
+`Start-Material-Studio.cmd` to open the dedicated local camera window.
+
+In Texture Dictionary, select a specimen and use **Develop your impression**.
+Choose soot ink, indigo, iron oxide, or a clean specimen starting point. Move
+virtual printing pressure to bring lower parts of the recorded relief into the
+impression. **Make pressure proof** compares 0.25, 0.55 and 0.85 with the same
+source, crop, palette and seed; its PNG download saves no variants and publishes
+nothing. Relief-shaded presentation has no pressure proof because lighting, rather
+than contact coverage, produces that view.
+
+**Restore a saved recipe** restores every control, including palette, crop,
+rotation, page size, seed and engine version, without changing the specimen cover.
+**Save new impression variant** records the working recipe and selects the new
+variant as the local cover. Changing the local cover does not update an approved
+public snapshot. Source and saved-image buttons cancel pending live previews.
+Original RGB comparison is available when the patch explicitly links an RGB frame.
+
+Engine 2 computes coverage and artistic effects on the cropped source grid, then
+uses that same result for preview and export. The preview caps its display at
+640 pixels; downsampling can hide fine grain. Source grids are never upsampled to
+invent detail. RGB-only artistic inputs are capped at 2048 pixels per side in both
+paths. Clean presentation removes dry brush, spread, edge blur and paper grain;
+switch back to ink to use their retained settings. Inversion also changes relief
+lighting. Missing samples stay outside the ink mask.
+
+All new recipes store explicit defaults and `engine_version: 2`. Earlier records
+without a version restore through engine 1, which retains the original rendering
+and layout behavior. Select a palette to move an old recipe to engine 2. To replay
+an old settings object through the CLI, explicitly include `engine_version: 1`.
+
+Master PNG, transparent contact ink and grayscale coverage exports have matching
+page dimensions and DPI. The transparent export contains pigment/contact coverage,
+not relief shading, paper or a scale bar. `artistic_layers.npz` contains base and
+final coverage, dry brush, paper grain and valid mask in cropped source coordinates,
+before rotation/page layout. `variant.json` is the full recipe; `process.json`
+records crop sample bounds and layout. These owner downloads remain private.
+
+Calibrated layouts preserve anisotropic X/Y spacing and account for rotation when
+reporting reproduction magnification. Source dimensions span the sample centers.
+The millimeter page size is an authored print size and remains separate from source
+calibration. Relative sources have no measured magnification or physical scale bar.
+Master pages are limited to 6000 pixels wide, 8000 high and 32 megapixels; owner
+preview/proof computation allows two concurrent renders.
+
+Local examples are at `examples/generated/gyotaku/index.html`: three 2400-pixel
+coin impressions, pressure proofs, transparent ink, coverage, layers and recipes.
+The provided coin has relative scale, so its 180 mm page is an authored size.
+Regenerate from an existing specimen (matching recipes are reused):
+
+```powershell
+.\.venv-studio\Scripts\python.exe tools/develop-gyotaku.py --specimen SPECIMEN_ID --data studio-data
+node tools/verify-ink-workbench.mjs
+```
+
+To open a particular local specimen, use
+`http://127.0.0.1:8090/?specimen=SPECIMEN_ID#dictionary`.
+
 ## Inputs, units and scientific scope
 
 Height imports support float NPY/NPZ (`height`, optional `mask`), grayscale PNG or

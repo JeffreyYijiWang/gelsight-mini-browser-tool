@@ -1,0 +1,7 @@
+.live-ink { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.live-ink [hidden] { display: none !important; }
+.live-ink .actions { margin-top: 10px; }
+.live-ink img { margin-top: 12px; }
+.live-ink[aria-busy="true"] img { opacity: .6; }
+.inactive-ink-effect { opacity: .55; }
+.live-ink [data-recipe-downloads] .web-link { font-size: 12px; padding: 8px 10px; }

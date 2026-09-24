@@ -12,10 +12,17 @@ import time
 from .records import uid, now
 from .store import Store
 
-KINDS={"demo","reconstruct","derive","analyze","material","atlas","print","project_mesh","impression","dictionary_preview","dictionary_build","exhibition_export","texture_export","gallery_export","atlas_export","print_export","video"}
+KINDS={"demo","reconstruct","derive","analyze","material","atlas","print","project_mesh","impression","typology","typology_export","dictionary_preview","dictionary_build","exhibition_export","texture_export","gallery_export","atlas_export","print_export","video"}
 
 
 def dispatch(store,kind,params,progress=None):
+    if kind=="typology":
+        from .typology import build_typology
+        return build_typology(store,params['items'],params.get('name','Texture typology'),params.get('settings'),progress)
+    if kind=="typology_export":
+        from .materials import zip_directory
+        record=store.get('typologies',params['id'])
+        return zip_directory(store,'private-typology',[record['id']],store.path(record['directory']))
     if kind=="demo":
         from .inputs import synthetic_demo
         return synthetic_demo(store,**params)
