@@ -12,10 +12,20 @@ import time
 from .records import uid, now
 from .store import Store
 
-KINDS={"demo","reconstruct","derive","analyze","material","atlas","print","project_mesh","impression","typology","typology_export","dictionary_preview","dictionary_build","exhibition_export","texture_export","gallery_export","atlas_export","print_export","video"}
+KINDS={"demo","reconstruct","derive","analyze","material","atlas","print","project_mesh","impression","typology","typology_surface","typology_export","unfold","unfold_export","dictionary_preview","dictionary_build","exhibition_export","texture_export","gallery_export","atlas_export","print_export","video"}
 
 
 def dispatch(store,kind,params,progress=None):
+    if kind=='typology_surface':
+        from .typology import upgrade_typology
+        return upgrade_typology(store,params['id'])
+    if kind=='unfold':
+        from .unfolding import build_unfolding
+        return build_unfolding(store,params['items'],params.get('name','Texture unfolding'),params.get('settings'),progress)
+    if kind=='unfold_export':
+        from .materials import zip_directory
+        record=store.get('unfoldings',params['id'])
+        return zip_directory(store,'private-unfolding',[record['id']],store.path(record['directory']))
     if kind=="typology":
         from .typology import build_typology
         return build_typology(store,params['items'],params.get('name','Texture typology'),params.get('settings'),progress)

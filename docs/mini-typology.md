@@ -2,12 +2,35 @@
 
 Double-click **Start-Material-Studio.cmd** in the project folder. The launcher
 starts the loopback Studio server when needed and opens a dedicated Chrome window
-at `http://127.0.0.1:8090/#typology`. It selects only a camera whose driver label
+at `http://127.0.0.1:8090/#p5`. It selects only a camera whose driver label
 contains GelSight. Your ordinary Chrome profile is not changed.
 
-## Collect a series
+## Capture RGB, depth and current mesh views together
 
-1. Plug in the Mini. The Live Typology panel should name the device and show its
+Use **p5 Live Capture** for all original resolution and processing controls. Set
+resolution/quality, lift off contact and calibrate 50 distinct frames. Name a
+sample and save its synchronized RGB/depth/mesh bundle. The default removes 10%
+from each edge; crop overrides and all view settings are recorded. Full RGB is
+retained. Float depth remains relative, and background subtraction is not metric
+calibration. Stale/in-progress calibration blocks saving.
+
+Select these RGB captures in **Live Typology**, then build one ShuffleSnap grid.
+The named contact sheet and raw/depth/mesh sheets all use that same assignment.
+Each view has named and image-only PNG downloads; missing historical views remain
+marked missing. Saved ZIPs include linked previews, full names and references.
+New live calibrations also average RGB to produce transparent-contact and absolute
+background-difference sheets. p5 depth has already had its depth baseline removed.
+Below the board, switch between actual assembled 3D geometry and combined depth;
+download OBJ or float depth/masks. Old boards can create a surface-view revision
+without changing their ShuffleSnap assignment. RGB-only frames require a linked
+reconstruction. Mesh components remain separate at scan boundaries; coordinates
+are authored display units, not a metric stitched atlas.
+The separate `/unfold` workspace segments texture regions and proposes an
+inferred assembly with image, flat mesh and sphere views. See the README mode guide.
+
+## Quick RGB-only collection in Live Typology
+
+1. Open mode 07, Live Typology, and plug in the Mini. Its panel should name the device and show its
    live image. On this computer, **GelSight Mini R0B 65Y7-RDNB** was verified at
    **640 × 480**. Use Connect Mini if it has not connected automatically.
 2. Choose **Start a new collection**. With the gel clear of any object, click
@@ -56,6 +79,15 @@ Earlier boards and original source files remain unchanged.
 
 ## Save and export
 
+- **Normal map:** in a saved board's surface assembly, preview OpenGL (+Y) or
+  DirectX (−Y). The artistic-seam switch applies to this view too. Download normal
+  PNGs, validity masks or float OpenGL normals/masks NPZ; all are in the private ZIP.
+  Older boards use **Build 3D / depth / normal views from this layout** to create
+  a new revision with the same cells. These are float-depth-derived normals at
+  authored mesh display scale, not metric measurements or exact OBJ face normals.
+  Separate scans do not share derivatives. Connected exports include synthetic
+  interpolation and an influence mask for affected normals. Invalid pixels are
+  neutral blue; apply the normal mask and import PNGs as non-color data.
 - **Contact sheet PNG:** a numbered grid, capped at 24 megapixels and 8000 pixels
   per dimension. Numbers map to names in the interactive board/JSON.
 - **Open comparison board:** a separate, read-only local page with fixed grid order.

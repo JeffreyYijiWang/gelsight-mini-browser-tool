@@ -111,6 +111,15 @@ def reconstruct(store,frame_id,settings=None,progress=None):
         if baseline_frame["session_id"]!=frame["session_id"]: raise ValueError("Baseline must belong to the same session.")
         baseline=image_array(store.path(baseline_frame["raw_file"]).read_bytes())
     calibration=None
+    crop=frame['settings'].get('sample_crop')
+    if crop:
+        from .samples import crop_box
+        if baseline is not None and (baseline.shape!=rgb.shape or baseline_frame['settings'].get('sample_crop')!=crop):
+            raise ValueError('Baseline resolution and crop must match this sample. Capture a new baseline.')
+        x0,y0,x1,y1=crop_box((rgb.shape[1],rgb.shape[0]),crop)
+        rgb=rgb[y0:y1,x0:x1]
+        if baseline is not None:baseline=baseline[y0:y1,x0:x1]
+        settings={**settings,'source_crop':crop}
     model_path=BUNDLED_MODEL
     adapter="mini_mlp"
     if settings.get("calibration_id"):

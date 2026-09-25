@@ -12,8 +12,10 @@ try{
   const token=await page.locator('meta[name="studio-token"]').getAttribute('content');
   const getState=async()=>await(await context.request.get(origin+'/api/state',{headers:{'X-Studio-Token':token}})).json();
   let state=await getState();
-  if(!state.patches.length){await page.getByRole('button',{name:'Load synthetic sample project'}).click();await waitJob();state=await getState();}
-  const source=state.patches.find(p=>p.synthetic&&p.version==='original');
+  // p5 demo captures are also marked synthetic; use the analytic mm fixture for
+  // this manufacturing regression, not whichever demo happened to be saved first.
+  if(!state.patches.some(p=>p.provenance?.some(e=>e.operation==='analytic fixture'))){await page.getByRole('button',{name:'Load synthetic sample project'}).click();await waitJob();state=await getState();}
+  const source=state.patches.find(p=>p.synthetic&&p.version==='original'&&p.provenance?.some(e=>e.operation==='analytic fixture'));
   await page.locator(`[data-action="select-patch"][data-id="${source.id}"]`).click();
   await page.screenshot({path:'test-artifacts/studio-capture.png'});
   await page.locator('[data-mode="material"]').click();await page.getByRole('heading',{name:'A surface, many interpretations.'}).waitFor();
@@ -34,6 +36,7 @@ try{
   });
   if(report.geometry.displacedRadius<=report.geometry.normalRadius+.1)throw new Error('Displacement did not change actual geometry.');
   await page.locator('[data-mode="print"]').click();await page.getByRole('heading',{name:'Give the surface a physical scale.'}).waitFor();
+  await page.waitForFunction(()=>document.querySelector('#workspace').getAttribute('aria-busy')==='false');
   await page.locator('#print-form [name="name"]').fill('Browser-verified synthetic relief');
   await page.getByRole('button',{name:'Build and validate geometry',exact:true}).click();await waitJob();
   state=await getState();const prints=state.prints.filter(p=>p.name==='Browser-verified synthetic relief');const print=prints.at(-1);report.print={geometry_valid:print.report.geometry_valid,errors:print.report.errors,roundtrip:print.exports.roundtrip};

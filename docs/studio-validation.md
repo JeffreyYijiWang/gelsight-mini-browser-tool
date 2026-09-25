@@ -2,7 +2,7 @@
 
 ## Implemented and checked
 
-`python -m pytest -q`: **49 passed**. One non-failing deprecation warning originates
+`python -m pytest -q`: **57 passed**. One non-failing deprecation warning originates
 from Starlette's use of an AnyIO alias. Checks cover:
 
 - Flat/ramp normal orientation, DirectX sign, physical spacing, masked integration
@@ -149,6 +149,75 @@ hosting service's terminal success response; the local build was tested separate
 - Border rounding affects corners in plan, not a fillet across the measured top.
   Unsupported WebGL uses a static fallback. Live camera availability depends on the
   connected device and browser permissions.
+
+## p5 bundles, stitched typologies and texture unfolding — 2026-09-24
+
+- Full numerical suite: **56 passed**, including seven new tests for exact central
+  80% crop and immutable originals; synchronized views; stale-baseline rejection;
+  repeatable segmentation and region provenance; missing-depth behavior; RGB
+  transparency without double depth subtraction; and immutable layout upgrades.
+- Actual OBJ reload verifies triangle counts and finite vertices. Default quilts
+  preserve separate source components. Optional artistic bridges reduce component
+  count without changing source vertices; source and synthetic masks do not overlap.
+- `tools/verify-p5-unfold.mjs` passed with installed Chrome and software WebGL on
+  the isolated port-8091 test store. It checks all four resolution options, two
+  captured demo bundles, coordinated named/image-only sheets, actual mesh/depth
+  views, the artistic connection toggle, region/flat/sphere views, private export,
+  saved reload and mobile overflow. No browser page errors were reported.
+- `tools/verify-p5-background.mjs` passed: 50 synthetic processing frames produce
+  an averaged RGB reference; a synthetic canvas video supplies synchronized model
+  RGB and background blobs. It opens no hardware camera and saves no live specimen.
+- Browser screenshots: `test-artifacts/p5-studio.png`, `p5-typology.png`,
+  `typology-stitched-mesh.png`, `unfold-flat.png`, `unfold-ball.png`, and
+  `unfold-regions.png`. Reports are `p5-unfold-report.json` and
+  `p5-background-report.json` in that same ignored directory.
+- The synthetic example generator passed again: tile maximum source error
+  0.04991385 mm within 0.05 mm; paired coupon 0.05998882 mm within 0.06 mm;
+  one atlas island with ten accepted links. Physical printing remains untested.
+- Initial combined validation and repeated server runs exposed Windows allocation
+  failures. Heavy suites were rerun sequentially; the owner CLI/server now uses
+  the same two-thread BLAS/OpenMP defaults as workers, reducing the observed
+  server private allocation from roughly 1.3 GB to 142 MB in the browser run.
+  Allocation failures return an actionable owner error. No unrelated apps were closed.
+- The original p5 source tree remains unmodified. Integration is a same-origin
+  wrapper. New hardware resolution modes and physical calibration were not tested;
+  prior 640×480 Mini verification is separate from these synthetic checks.
+- The unchanged original p5 regression passed again: 76,800 finite depth values,
+  152,482 OBJ triangles, baseline recovery and ZIP metadata/encoding checks.
+  The broader existing Studio smoke reached valid STL/3MF round trips and atlas
+  construction, but its ink job was blocked by Windows: `DLL load failed while
+  importing cv2: The paging file is too small for this operation to complete.`
+  This run is not claimed as a complete legacy workflow pass. The new p5/typology/
+  unfolding browser suite and numerical suite passed separately as recorded above.
+- Unfolding is an appearance-based proposed composition, not recovered object
+  topology. Sphere wrapping has seam/pole distortion. Combined typology mesh units
+  are authored display coordinates; float arrays and masks retain their described
+  source/display encoding. Artistic seams cannot support physical measurements.
+- All QA data stayed in the isolated test store. No specimen was publicly approved
+  or deployed, and the user's public collection remains empty.
+
+## Typology normal maps — 2026-09-24
+
+- Full numerical suite: **57 passed**. The focused capture/typology/unfolding file
+  has eight passing tests. An analytic ramp verifies XY spacing and Y-up normals,
+  one-sided boundaries, holes, isolated-pixel exclusion and separation across a
+  100-unit source-cell discontinuity. Export checks verify unit lengths, PNG
+  quantization, exact valid-pixel green inversion, neutral missing pixels, masks,
+  synthetic influence, standalone links and immutable board revisions.
+- The synthetic example generator passed again with the previously recorded tile,
+  coupon and atlas results. No physical or hardware validation was added.
+- `tools/verify-p5-unfold.mjs` passed with no page errors: both normal conventions,
+  separate/connected preview switching, all four normal PNG downloads, return to
+  depth mode, capture bundles, six sheets, 3D assembly and unfolding still work.
+  The normal preview was visually checked in `test-artifacts/typology-normal-map.png`.
+  Its first run selected an older sample twice because it assumed the last
+  timestamp-sorted record was the new capture; the harness now uses response IDs.
+- Original p5 regression passed again: 76,800 finite depth samples, 152,482 OBJ
+  triangles, baseline recovery and ZIP encoding/metadata. Its source tree has no
+  changes. JavaScript syntax checks and `git diff --check` also passed.
+- Normal PNGs use the assembly display scale and retain their normal-validity mask.
+  Connected maps describe the interpolated raster; no exact OBJ-face equivalence
+  or metric accuracy is claimed. Float exports retain OpenGL normals and masks.
 
 See `research-review.md` for algorithm differences and `studio.md` for setup,
 configuration, CPU budgets, calibration entry points and export interpretation.

@@ -1,10 +1,15 @@
 from __future__ import annotations
 import argparse
 import json
+import os
 from pathlib import Path
 
 
 def main():
+    # Match worker budgets in the owner server/CLI too. Large automatic BLAS
+    # thread pools can exhaust Windows commit memory alongside a camera browser.
+    for variable in ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS'):
+        os.environ.setdefault(variable,'2')
     parser=argparse.ArgumentParser(description='GelSight Material Studio: local processing and dictionary publication builds.')
     parser.add_argument('command',choices=['serve','worker','demo','run','import','build-dictionary','examples','train-calibration'])
     parser.add_argument('--data',default='studio-data')

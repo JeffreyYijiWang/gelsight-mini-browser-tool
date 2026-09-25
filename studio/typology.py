@@ -17,6 +17,24 @@ from .records import uid, now
 KINDS = ('frames', 'patches', 'impressions')
 
 
+def upgrade_typology(store,record_id):
+    """New derived revision: reuse the exact frozen selection and cell assignment."""
+    import copy
+    import shutil
+    from .typology_surface import build_surface
+    original=store.get('typologies',record_id);record=copy.deepcopy(original)
+    new_id=uid();directory=store.path('typologies/'+new_id)
+    shutil.copytree(store.path(original['directory']),directory)
+    record.update(id=new_id,created_at=now(),directory='typologies/'+new_id,parent_id=record_id,name=original['name']+' · surface views')
+    build_surface(store,directory,record)
+    if not record.get('surface'):
+        raise ValueError('This board has no reconstructed depth. Reconstruct its RGB frames in Surface Capture, or save samples in p5 Live Capture, then build the surface views.')
+    _standalone(directory,record)
+    (directory/'typology.json').write_text(json.dumps(record,indent=2,allow_nan=False),encoding='utf-8')
+    store.save('typologies',record)
+    return record
+
+
 def catalog(store):
     sessions = {s['id']: s for s in store.list('sessions')}
     specimens = {s['id']: s for s in store.list('specimens')}
@@ -64,6 +82,9 @@ def source_image(store, kind, record_id):
         picture = Image.fromarray(np.rint(gray*255).astype(np.uint8)).convert('RGB')
         return picture, hashlib.sha256(store.path(patch.arrays).read_bytes()).hexdigest()
     with Image.open(path) as opened:
+        if kind=='frames' and record['settings'].get('sample_crop'):
+            from .samples import crop_box
+            opened=opened.crop(crop_box(opened.size,record['settings']['sample_crop']))
         opened.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
         picture = opened.convert('RGB')
     return picture, hashlib.sha256(path.read_bytes()).hexdigest()
@@ -140,7 +161,23 @@ def build_typology(store, items, name='Texture typology', settings=None, progres
         picture.thumbnail((384, 384), Image.Resampling.LANCZOS)
         filename = f'image-{i:04}.webp'
         picture.save(directory/filename, quality=88)
-        entries.append({**lookup[kind, item_id], 'source_sha256':digest, 'image':filename})
+        entry={**lookup[kind, item_id], 'source_sha256':digest, 'image':filename}
+        # Frozen linked views share exactly one ShuffleSnap assignment. Missing
+        # capture-time views stay missing; never fabricate an old mesh snapshot.
+        sample_id=store.get('frames',item_id)['settings'].get('sample_id') if kind=='frames' else None
+        if kind=='patches':
+            sample_id=next((s['id'] for s in store.list('samples') if s['patch_id']==item_id),None)
+        if sample_id:
+            sample=store.get('samples',sample_id);entry['sample_id']=sample_id;entry['views']={}
+            for view in ('raw','depth','mesh','clean','difference'):
+                if not (store.path(sample['directory'])/(view+'.png')).is_file():continue
+                target=f'{view}-{i:04}.png'
+                with Image.open(store.path(sample['directory'])/(view+'.png')) as im:
+                    im.thumbnail((512,512));im.save(directory/target)
+                entry['views'][view]=target
+        elif kind=='frames':entry['views']={'raw':filename}
+        elif kind=='patches':entry['views']={'depth':filename}
+        entries.append(entry)
         if progress:
             progress(.1+.55*(i+1)/len(keys), f'Comparing image {i+1} of {len(keys)}')
     points, fraction = project_features(features)
@@ -164,6 +201,14 @@ def build_typology(store, items, name='Texture typology', settings=None, progres
         interpretation='Visual similarity of selected images; not physical material identity, calibrated distance or a health assessment.',
         exports=dict(sheet='contact-sheet.png', collection='index.html', manifest='typology.json'))
     _contact_sheet(directory, record)
+    if any(e.get('views') for e in entries):
+        record['exports']['views']={}
+        for view in ('raw','depth','mesh','clean','difference'):
+            _contact_sheet(directory,record,view,labels=False)
+            _contact_sheet(directory,record,view,labels=True)
+            record['exports']['views'][view]=f'{view}-sheet.png'
+    from .typology_surface import build_surface
+    build_surface(store,directory,record)
     _standalone(directory, record)
     (directory/'typology.json').write_text(json.dumps(record, indent=2, allow_nan=False), encoding='utf-8')
     np.savez_compressed(directory/'features.npz', features=np.asarray(features), points=points, grid_points=grid)
@@ -171,25 +216,38 @@ def build_typology(store, items, name='Texture typology', settings=None, progres
     return record
 
 
-def _contact_sheet(directory, record):
+def _contact_sheet(directory, record, view=None, labels=True):
     columns, rows = record['width'], record['height']
     tile = min(260, int(math.sqrt(24_000_000/(columns*rows))), 8000//max(columns, rows))
     if tile < 32:
         raise ValueError('Grid is too elongated for a readable contact sheet. Use more columns.')
     sheet = Image.new('RGB', (columns*tile, rows*tile), '#f1ecdf')
     draw = ImageDraw.Draw(sheet)
-    font = ImageFont.load_default(size=max(8, min(14, tile//16)))
+    font_size=max(8,min(14,tile//16))
+    font=ImageFont.load_default(size=font_size)
+    for path in ('C:/Windows/Fonts/arial.ttf','/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'):
+        if Path(path).is_file():font=ImageFont.truetype(path,font_size);break
     for index, entry in enumerate(record['items']):
-        with Image.open(directory/entry['image']) as picture:
+        filename=entry.get('views',{}).get(view) if view else entry['image']
+        x, y = entry['column']*tile, entry['row']*tile
+        inset=max(2,tile//32)
+        if filename:
+          with Image.open(directory/filename) as picture:
             inset = max(2, tile//32)
-            thumb = ImageOps.contain(picture.convert('RGB'), (tile-2*inset, tile-2*inset-20))
-            x, y = entry['column']*tile, entry['row']*tile
+            rgba=picture.convert('RGBA');paper=Image.new('RGBA',rgba.size,'#f1ecdf');paper.alpha_composite(rgba)
+            thumb = ImageOps.contain(paper.convert('RGB'), (tile-2*inset, tile-2*inset-(36 if labels else 0)))
             sheet.paste(thumb, (x+(tile-thumb.width)//2, y+inset))
-            # Numbered key avoids losing long or non-Latin names in small cells;
-            # complete names remain in the interactive page and JSON manifest.
-            label = str(index+1).zfill(3)
-            draw.text((x+inset, y+tile-18), label, font=font, fill='#26372f')
-    sheet.save(directory/'contact-sheet.png')
+        else:draw.text((x+inset,y+tile//2),'Not captured',font=font,fill='#6b7065')
+        if labels:
+            text=f'{index+1:03} {entry["name"]}'
+            lines=['']
+            for char in text:
+                if draw.textlength(lines[-1]+char,font=font)>tile-2*inset:
+                    if len(lines)==2:lines[-1]=lines[-1][:-2]+'…';break
+                    lines.append('')
+                lines[-1]+=char
+            draw.multiline_text((x+inset,y+tile-34),'\n'.join(lines),font=font,fill='#26372f',spacing=2)
+    sheet.save(directory/(f'{view}-sheet'+('-named' if labels else '')+'.png' if view else 'contact-sheet.png'))
 
 
 def _standalone(directory, record):
@@ -198,5 +256,13 @@ def _standalone(directory, record):
         figures.append(f'<a href="{entry["image"]}" target="_blank" rel="noopener" style="grid-column:{entry["column"]+1};grid-row:{entry["row"]+1}"><img loading="lazy" src="{entry["image"]}" alt="{html.escape(entry["name"], quote=True)}"><span>{i+1:03} {html.escape(entry["name"])}<small>{entry["kind"]}{" · synthetic" if entry["synthetic"] else ""}</small></span></a>')
     page = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>__TITLE__</title><style>
 body{background:#eee9dc;color:#26372f;font:16px system-ui;margin:28px}h1{font:40px Georgia}p{max-width:900px;line-height:1.6}a{color:inherit}main{overflow:auto}section{display:grid;gap:12px;grid-template-columns:repeat(__COLS__,minmax(120px,1fr));min-width:__MIN__px}section a{background:#faf6ec;text-decoration:none;padding:8px}img{display:block;width:100%;aspect-ratio:1;object-fit:contain}span,small{display:block;font-size:12px;overflow-wrap:anywhere}small{opacity:.6}a:focus-visible{outline:3px solid #8b682d}</style><h1>__TITLE__</h1><p>Private image typology · visual descriptors → PCA → <a href="https://github.com/kylemcdonald/shufflesnap">ShuffleSnap</a>. Nearby images share visual features, not a measured material class. The recorded order remains fixed; click an image to inspect it.</p><p><a href="contact-sheet.png" download>Download contact sheet</a> · <a href="typology.json" download>Download layout and source references</a></p><main><section>__ITEMS__</section></main></html>'''
+    links=' '.join(f'<a href="{v}-sheet{suffix}.png" download>{v.title()} {"with names" if suffix else "images"}</a> ·' for v in record['exports'].get('views',{}) for suffix in ('','-named'))
+    if record.get('surface'):links+='<a href="stitched-depth.png" download>Combined depth PNG</a> · <a href="stitched-mesh.obj" download>Actual stitched mesh OBJ</a> · <a href="stitched-surface.npz" download>Float depth and mask</a>'
+    if record.get('surface',{}).get('normal_maps'):
+        for prefix in ('stitched','connected'):
+            for convention in ('opengl','directx'):
+                links+=f' · <a href="{prefix}-normal-{convention}.png" download>{prefix.title()} {convention} normal PNG</a>'
+            links+=f' · <a href="{prefix}-normal-mask.png" download>{prefix.title()} normal mask</a> · <a href="{prefix}-normals.npz" download>{prefix.title()} float normals and masks</a>'
+    page=page.replace('<main>',f'<p>{links}</p><main>')
     page = page.replace('__TITLE__', html.escape(record['name'])).replace('__COLS__', str(record['width'])).replace('__MIN__', str(record['width']*132)).replace('__ITEMS__', ''.join(figures))
     (directory/'index.html').write_text(page, encoding='utf-8')

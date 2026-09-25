@@ -161,7 +161,7 @@ def save_capture(store, png, device, name='', session_id=None, baseline=False):
     # Label is metadata only; stored raw filenames remain hashes.
     result = import_bytes(store, title+'.png', png, 'rgb', session.id,
                           settings=dict(capture_device=device['name'], capture_device_id=device['id'],
-                                        capture_role='baseline' if baseline else 'sample', capture_time=now()))
+                                        capture_role='baseline' if baseline else 'sample', capture_time=now(),sample_crop=[.1,.1,.8,.8]))
     if baseline:
         updated = store.get('sessions', session.id)
         updated['baseline_id'] = result['frame']['id']

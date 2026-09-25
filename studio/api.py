@@ -52,6 +52,8 @@ def create_app(data_dir=None):
         return response
     @app.exception_handler(ValueError)
     async def invalid(request,exc):return JSONResponse({"detail":str(exc)},status_code=422)
+    @app.exception_handler(MemoryError)
+    async def out_of_memory(request,exc):return JSONResponse({'detail':'Not enough available memory. Close unused applications or restart Studio, then retry with fewer images.'},status_code=503)
     @app.get('/')
     async def index():
         page=(ROOT/'studio/web/index.html').read_text(encoding='utf-8').replace('__OWNER_TOKEN__',token)
@@ -59,7 +61,35 @@ def create_app(data_dir=None):
         response.headers['Cache-Control']='no-store';return response
     @app.get('/api/state')
     async def state():
-        return {kind:store.list(kind) for kind in ('sessions','frames','patches','materials','atlases','prints','calibrations','printers','specimens','impressions','typologies','jobs','exports')}
+        return {kind:store.list(kind) for kind in ('sessions','frames','patches','materials','atlases','prints','calibrations','printers','specimens','impressions','typologies','samples','unfoldings','jobs','exports')}
+    @app.get('/p5-studio')
+    async def p5_studio():
+        # Same original assets, with a Studio-only bridge. Standalone upstream is unchanged.
+        page=(ROOT/'gelsight_p5/index.html').read_text(encoding='utf-8')
+        page=page.replace('<head>','<head><base href="/gelsight_p5/">')
+        page=page.replace('</body>','<script src="/web/p5-bridge.js"></script></body>')
+        return HTMLResponse(page,headers={'Cache-Control':'no-store','X-Frame-Options':'SAMEORIGIN'})
+    @app.get('/unfold')
+    async def unfold_program():
+        page=(ROOT/'studio/web/unfold.html').read_text(encoding='utf-8').replace('__OWNER_TOKEN__',token)
+        response=HTMLResponse(page);response.set_cookie('studio_owner',token,httponly=True,samesite='strict')
+        response.headers['Cache-Control']='no-store';return response
+    @app.post('/api/samples/p5')
+    async def p5_capture(raw:UploadFile=File(...),mesh:UploadFile=File(...),depth_preview:UploadFile=File(...),payload:UploadFile=File(...),name:str=Form(''),session_id:str=Form(''),color_baseline:UploadFile|None=File(None),model_rgb:UploadFile|None=File(None)):
+        from .samples import save_p5_sample
+        parts=[]
+        for upload,limit in ((raw,32_000_000),(mesh,8_000_000),(depth_preview,8_000_000),(payload,5_000_000)):
+            data=await upload.read(limit+1)
+            if len(data)>limit:raise ValueError('Capture exceeds upload budget.')
+            parts.append(data)
+        try:metadata=json.loads(parts[3])
+        except (ValueError,UnicodeDecodeError):raise ValueError('Capture metadata is not valid JSON.')
+        optional=[]
+        for upload in (color_baseline,model_rgb):
+            data=await upload.read(2_000_001) if upload else None
+            if data and len(data)>2_000_000:raise ValueError('RGB reference exceeds upload budget.')
+            optional.append(data)
+        return save_p5_sample(store,*parts[:3],metadata,name,session_id or None,*optional)
     @app.get('/api/camera/devices')
     def camera_devices():
         from .camera import devices
@@ -166,7 +196,7 @@ def create_app(data_dir=None):
         return FileResponse(store.path(frame['raw_file']))
     @app.get('/api/files/{kind}/{record_id}/{filename:path}')
     async def derived_file(kind:str,record_id:str,filename:str):
-        if kind not in ('materials','prints','impressions','atlases','typologies'):raise HTTPException(404)
+        if kind not in ('materials','prints','impressions','atlases','typologies','samples','unfoldings'):raise HTTPException(404)
         record=store.get(kind,record_id)
         directory=store.path(f'atlases/{record_id}' if kind=='atlases' else record['directory'])
         path=(directory/filename).resolve()

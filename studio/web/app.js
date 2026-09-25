@@ -2,11 +2,16 @@ import { SurfaceViewer } from './viewer.js';
 import { DrawingLab } from './brush.js';
 import { mountInkPreview } from './ink-live.js';
 import { mountTypology } from './typology.js';
+import { mountP5 } from './p5-workspace.js';
 
 const token=document.querySelector('meta[name="studio-token"]').content;
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const titles={capture:'Surface Capture',atlas:'Tactile Atlas',material:'Brush & Material Lab',print:'Print Studio',gallery:'Material Gallery',dictionary:'Texture Dictionary',typology:'Live Typology'};
 const typologyNav=document.createElement('button');typologyNav.dataset.mode='typology';typologyNav.innerHTML='07 <span>Live Typology</span>';document.querySelector('#modes').append(typologyNav);
+titles.p5='p5 Live Capture';
+const p5Nav=document.createElement('button');p5Nav.dataset.mode='p5';p5Nav.innerHTML='08 <span>p5 Live Capture</span>';document.querySelector('#modes').append(p5Nav);
+const unfoldLink=document.createElement('a');unfoldLink.href='/unfold';unfoldLink.target='_blank';unfoldLink.rel='noopener';unfoldLink.className='web-link';unfoldLink.textContent='09 Texture Unfolding ↗';document.querySelector('#modes').append(unfoldLink);
+let disposeP5=null;
 const regions=['custom','ankle','finger','fingertip','palm','nipple/areola','inner elbow','outer elbow','wrist'];
 let state={},mode=location.hash.slice(1)||'capture',selectedPatch=null,selectedFrame=null,selectedMaterial=null,selectedPrint=null,selectedAtlas=null,selectedSpecimen=new URLSearchParams(location.search).get('specimen');
 let viewers=[],drawing=null,cameraStream=null,analysis=null,atlasHistory=[],lastAtlasSettings={},jobId=null,disposeInk=null,disposeTypology=null;
@@ -49,10 +54,12 @@ async function render(){
   try{
   disposeInk?.();disposeInk=null;
   disposeTypology?.();disposeTypology=null;
+  disposeP5?.();disposeP5=null;
+  if(mode!=='capture'){cameraStream?.getTracks().forEach(t=>t.stop());cameraStream=null;}
   viewers.forEach(v=>v.dispose());viewers=[];drawing?.dispose();drawing=null;
   if(!titles[mode])mode='capture';$('#mode-title').textContent=titles[mode];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
   const patch=state.patches?.find(p=>p.id===selectedPatch);$('#source-status').textContent=patch?(patch.synthetic?'Synthetic · ':'')+patch.state+(patch.units==='mm'?' · mm':' · relative relief'):'No source selected';$('#source-status').className='status '+(patch?.synthetic?'synthetic':patch?.state||'');
-  await ({capture:renderCapture,atlas:renderAtlas,material:renderMaterial,print:renderPrint,gallery:renderGallery,dictionary:renderDictionary,typology:renderTypology}[mode])();wireActions();
+  await ({capture:renderCapture,atlas:renderAtlas,material:renderMaterial,print:renderPrint,gallery:renderGallery,dictionary:renderDictionary,typology:renderTypology,p5:async()=>{cameraStream?.getTracks().forEach(t=>t.stop());cameraStream=null;disposeP5=mountP5(workspace,{api,refresh,notice,esc,getState:()=>state});}}[mode])();wireActions();
   }finally{
     workspace.inert=false;workspace.setAttribute('aria-busy','false');
     document.querySelectorAll('[data-mode],#refresh,#demo').forEach(button=>button.disabled=false);
@@ -151,9 +158,9 @@ async function action(name,data){
   if(name==='atlas-to-material'||name==='atlas-to-print'){selectedPatch=data.id;mode=name==='atlas-to-material'?'material':'print';location.hash=mode;return render();}
   if(name==='atlas-undo'){const previous=atlasHistory.pop();if(previous){lastAtlasSettings=previous.settings;selectedAtlas=previous.atlasId;}return render();}
   if(name==='save-baseline'){const v=values($('#reconstruct-form')),frame=state.frames.find(f=>f.id===v.frame_id);await api('/sessions','POST',{id:frame.session_id,baseline_id:v.baseline_id||null});notice('Session baseline saved.');return refresh();}
-  if(name==='camera-start'){cameraStream?.getTracks().forEach(t=>t.stop());const device=$('#camera-device').value;cameraStream=await navigator.mediaDevices.getUserMedia({video:device?{deviceId:{exact:device}}:{width:640,height:480},audio:false});$('#camera-preview').srcObject=cameraStream;const devices=await navigator.mediaDevices.enumerateDevices();$('#camera-device').innerHTML=devices.filter(d=>d.kind==='videoinput').map(d=>`<option value="${esc(d.deviceId)}">${esc(d.label||'Camera')}</option>`).join('');notice('Camera enabled. Capture a frame only when the desired surface is in contact.');return;}
+  if(name==='camera-start'){cameraStream?.getTracks().forEach(t=>t.stop());const devices=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput'&&/gel\s*sight/i.test(d.label));const device=devices.find(d=>d.deviceId===$('#camera-device').value)||devices[0];if(!device)throw new Error('No named GelSight is available. Use Start-Material-Studio.cmd to grant this local origin camera access.');cameraStream=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:device.deviceId},width:{ideal:640},height:{ideal:480}},audio:false});$('#camera-preview').srcObject=cameraStream;$('#camera-device').innerHTML=devices.map(d=>`<option value="${esc(d.deviceId)}">${esc(d.label)}</option>`).join('');notice('GelSight enabled. Use p5 Live Capture for synchronized RGB/depth/mesh bundles.');return;}
   if(name==='camera-stop'){cameraStream?.getTracks().forEach(t=>t.stop());cameraStream=null;if($('#camera-preview'))$('#camera-preview').srcObject=null;return;}
-  if(name==='camera-capture'){const video=$('#camera-preview');if(!cameraStream||!video.videoWidth)throw new Error('Enable a camera first.');const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;c.getContext('2d').drawImage(video,0,0);const blob=await new Promise(r=>c.toBlob(r,'image/png')),form=new FormData();form.append('files',blob,'live-'+Date.now()+'.png');form.append('kind','rgb');form.append('session_id',state.frames.find(f=>f.id===selectedFrame)?.session_id||'');const result=await api('/import','POST',form);selectedFrame=result[0].frame.id;await refresh();notice('Live frame saved locally.');return;}
+  if(name==='camera-capture'){const video=$('#camera-preview');if(!cameraStream||!video.videoWidth)throw new Error('Enable a camera first.');const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;c.getContext('2d').drawImage(video,0,0);const blob=await new Promise(r=>c.toBlob(r,'image/png')),form=new FormData();form.append('files',blob,'live-'+Date.now()+'.png');form.append('kind','rgb');form.append('settings',JSON.stringify({sample_crop:[.1,.1,.8,.8]}));form.append('session_id',state.frames.find(f=>f.id===selectedFrame)?.session_id||'');const result=await api('/import','POST',form);selectedFrame=result[0].frame.id;await refresh();notice('Live frame saved locally with a central 80% derived crop.');return;}
   if(name==='drawing-undo')return drawing?.undo();if(name==='drawing-replay')return drawing?.replay();if(name==='drawing-clear'){drawing.strokes=[];drawing.clear();return;}
   if(name==='drawing-save')return $('#drawing').toBlob(b=>saveBlob(b,'brush-drawing.png'));
   if(name==='drawing-strokes')return saveBlob(new Blob([JSON.stringify({schema:'studio-strokes/1',material_id:selectedMaterial,strokes:drawing.strokes},null,2)],{type:'application/json'}),'brush-strokes.json');

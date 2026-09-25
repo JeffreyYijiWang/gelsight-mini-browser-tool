@@ -1,3 +1,4 @@
+import {SurfaceViewer} from './viewer.js';
 const css=document.createElement('link');css.rel='stylesheet';css.href='/web/typology.css';document.head.append(css);
 let activeSession=localStorage.getItem('mini-session')||'',boardId=null,sourceKind='frames';
 let miniStream=null,miniDevice=null;
@@ -5,12 +6,12 @@ const chosen=new Set();
 const key=item=>item.kind+':'+item.id;
 
 export async function mountTypology(root,{api,getState,refresh,runJob,notice,esc,openFrame}) {
-  let catalog=[],disposed=false,connected=false,capturing=false;
+  let catalog=[],disposed=false,connected=false,capturing=false,boardViewer=null,boardGeneration=0;
   const state=getState();
   if(activeSession&&!state.sessions.some(s=>s.id===activeSession))activeSession='';
   root.innerHTML=`<section class="mode-intro"><div><h2>A typology of things touched.</h2><p>Collect tactile images with your Mini. Compare texture, arrange the collection with ShuffleSnap, then inspect each surface.</p></div><span class="badge">Private · stored on this computer</span></section>
   <div class="typology-workspace"><section class="panel mini-panel"><h3>GelSight Mini</h3><p id="mini-status" role="status">Checking connected devices…</p>
-  <label class="field"><span>Connected Mini</span><select id="mini-device" aria-label="Connected Mini"></select></label>
+  <p><a class="web-link" href="#p5">Open full p5 live depth, resolutions & mesh capture →</a></p><label class="field"><span>Connected Mini</span><select id="mini-device" aria-label="Connected Mini"></select></label>
   <div class="actions"><button type="button" id="mini-connect" class="primary">Connect Mini</button><button type="button" id="mini-disconnect">Disconnect</button></div>
   <div class="mini-live"><video id="mini-live" aria-label="Live GelSight tactile image" autoplay playsinline muted hidden></video><span id="mini-placeholder">Connect to see the sensor. No images are saved automatically.</span></div>
   <label class="field"><span>Collection session</span><select id="mini-session"><option value="">Start a new collection</option>${state.sessions.filter(s=>s.sensor_id&&!s.synthetic).map(s=>`<option value="${s.id}" ${s.id===activeSession?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label>
@@ -84,11 +85,47 @@ export async function mountTypology(root,{api,getState,refresh,runJob,notice,esc
   $('#typology-clear').onclick=()=>{chosen.clear();renderCandidates();};
   $('#typology-form').onsubmit=e=>{e.preventDefault();attempt(async()=>{const form=new FormData(e.currentTarget);await runJob('typology',{name:form.get('name'),items:catalog.filter(item=>chosen.has(key(item))).map(({kind,id})=>({kind,id})),settings:{comparison:form.get('comparison'),columns:Number(form.get('columns'))}},result=>{boardId=result.id;});})();};
   function renderBoard(){
+    boardViewer?.dispose();boardViewer=null;const generation=++boardGeneration;
     const board=getState().typologies?.find(b=>b.id===boardId),box=$('#typology-board');
     if(!board){box.innerHTML='<p class="hint">Your saved layouts will appear here. Original images are never reordered or overwritten.</p>';return;}
     const base=`/api/files/typologies/${board.id}/`;
     box.innerHTML=`<h3>${esc(board.name)}</h3><p class="hint">${board.items.length} images · ${board.width} × ${board.height} grid · ${esc(board.settings.comparison)} · PCA retains ${(board.explained_variance_fraction*100).toFixed(1)}% of descriptor variation</p><div class="actions"><a class="web-link" href="${base}contact-sheet.png" download>Contact sheet PNG</a><a class="web-link" href="${base}index.html" target="_blank" rel="noopener">Open comparison board</a><button type="button" id="typology-export">Export private board ZIP</button></div><div class="typology-scroll"><div class="typology-grid" style="grid-template-columns:repeat(${board.width},minmax(110px,1fr));min-width:${board.width*120}px">${board.items.map((item,i)=>`<button type="button" data-inspect="${i}" style="grid-column:${item.column+1};grid-row:${item.row+1}"><img loading="lazy" src="${base}${item.image}" alt="${esc(item.name)}"><span>${String(i+1).padStart(3,'0')} ${esc(item.name)}</span></button>`).join('')}</div></div>`;
     box.querySelectorAll('[data-inspect]').forEach(button=>button.onclick=()=>{const item=board.items[Number(button.dataset.inspect)];$('#typology-image-title').textContent=item.name;$('#typology-image').src=item.kind==='frames'?`/api/frames/${item.id}/image`:item.kind==='impressions'?`/api/files/impressions/${item.id}/display.webp`:`/api/patches/${item.id}/image/height`;$('#typology-image').alt=item.name;$('#typology-image-info').textContent=`${item.kind} · ${item.synthetic?'synthetic fixture':'recorded source'} · ${board.interpretation}`;$('#typology-open-frame').hidden=item.kind!=='frames';$('#typology-open-frame').onclick=()=>{$('#typology-inspector').close();openFrame(item.id);};$('#typology-inspector').showModal();});
+    if(board.exports?.views){
+      const links=document.createElement('div');links.className='actions';
+      for(const view of Object.keys(board.exports.views))for(const named of [false,true]){const a=document.createElement('a');a.className='web-link';a.href=base+view+'-sheet'+(named?'-named':'')+'.png';a.download='';a.textContent=view+' '+(named?'with names':'images only');links.append(a);}
+      box.querySelector('.actions').after(links);
+    }
+    const upgrade=document.createElement('button');upgrade.type='button';upgrade.textContent='Build 3D / depth / normal views from this layout';upgrade.onclick=attempt(()=>runJob('typology_surface',{id:board.id},result=>{boardId=result.id;}));box.querySelector('.actions').append(upgrade);
+    if(board.surface){
+      const assembly=document.createElement('section');assembly.className='panel';assembly.innerHTML=`<h3>ShuffleSnap surface assembly</h3><p class="hint">${esc(board.surface.interpretation)}</p><div class="actions"><button type="button" id="typology-show-mesh">Stitched 3D meshes</button><button type="button" id="typology-show-depth">Combined depth map</button><a class="web-link" href="${base}stitched-mesh.obj" download>Actual mesh OBJ</a><a class="web-link" href="${base}stitched-depth.png" download>Depth PNG</a><a class="web-link" href="${base}stitched-surface.npz" download>Float depth + mask NPZ</a></div><div id="typology-surface-view" class="viewer"></div><img id="typology-stitched-depth" src="${base}stitched-depth.png" alt="Combined depth in ShuffleSnap order" style="max-width:100%;max-height:640px;object-fit:contain" hidden><label class="check"><input type="checkbox" id="typology-wire">Wireframe</label><p id="typology-geometry-info" class="hint"></p>`;box.append(assembly);
+      let imageMode='depth';
+      const updateImage=()=>{const prefix=$('#typology-connect-seams')?.checked?'connected':'stitched';const convention=$('#typology-normal-convention')?.value||'opengl';const img=$('#typology-stitched-depth');img.src=base+prefix+(imageMode==='normal'?`-normal-${convention}.png`:'-depth.png');img.alt=`${imageMode==='normal'?'Normal map ('+convention+')':'Combined depth'} in ShuffleSnap order${prefix==='connected'?' with artistic seams':''}`;};
+      const showImage=mode=>{imageMode=mode;updateImage();$('#typology-surface-view').hidden=true;$('#typology-stitched-depth').hidden=false;};
+      $('#typology-show-mesh').onclick=()=>{$('#typology-surface-view').hidden=false;$('#typology-stitched-depth').hidden=true;boardViewer?.resize();};
+      $('#typology-show-depth').onclick=()=>showImage('depth');
+      if(board.surface.normal_maps){
+        const controls=document.createElement('div');controls.className='actions';
+        controls.innerHTML='<button type="button" id="typology-show-normal">Normal map</button><label>Normal convention <select id="typology-normal-convention"><option value="opengl">OpenGL (+Y)</option><option value="directx">DirectX (−Y)</option></select></label>';
+        const prefixes=board.surface.artistic_connections?['stitched','connected']:['stitched'];
+        for(const prefix of prefixes){
+          for(const convention of ['opengl','directx']){const a=document.createElement('a');a.className='web-link';a.href=base+`${prefix}-normal-${convention}.png`;a.download='';a.textContent=`${prefix==='connected'?'Artistic connected':'Stitched'} ${convention==='opengl'?'OpenGL':'DirectX'} normal PNG`;controls.append(a);}
+          for(const [suffix,label] of [['normal-mask.png','normal mask PNG'],['normals.npz','float normals + masks NPZ']]){const a=document.createElement('a');a.className='web-link';a.href=base+prefix+'-'+suffix;a.download='';a.textContent=(prefix==='connected'?'Artistic connected ':'Stitched ')+label;controls.append(a);}
+        }
+        assembly.querySelector('.actions').after(controls);
+        const note=document.createElement('p');note.className='hint';note.textContent='Normals derive from float depth at the assembled mesh display scale. Gaps use neutral blue; use the normal mask when importing. The seam switch also changes this preview. Connected maps contain artistic interpolation. Import normal PNGs as non-color data; avoid adding the same relief twice to an already displaced mesh.';controls.after(note);
+        $('#typology-show-normal').onclick=()=>showImage('normal');$('#typology-normal-convention').onchange=()=>{showImage('normal');};
+      }
+      $('#typology-wire').onchange=e=>boardViewer?.setOptions({wireframe:e.target.checked});
+      let meshRequest=0;
+      const loadMesh=async connected=>{const request=++meshRequest;const response=await fetch(base+(connected?'connected-mesh.json':'stitched-mesh.json'));if(!response.ok)throw new Error('Could not load the stitched geometry.');const mesh=await response.json();if(disposed||generation!==boardGeneration||request!==meshRequest)return;boardViewer?.dispose();boardViewer=new SurfaceViewer($('#typology-surface-view'),{onStatus:t=>$('#typology-geometry-info').textContent=t+(connected?' · artistic connecting seams':' · separate captured surfaces')});boardViewer.setMesh(mesh);boardViewer.setOptions({color:'#73b8b0',wireframe:$('#typology-wire').checked});};
+      if(board.surface.artistic_connections){
+        const toggle=document.createElement('label');toggle.className='check';toggle.innerHTML='<input type="checkbox" id="typology-connect-seams">Connect neighboring tiles with artistic seams';assembly.querySelector('.actions').after(toggle);
+        $('#typology-connect-seams').onchange=attempt(async()=>{const connected=$('#typology-connect-seams').checked;updateImage();await loadMesh(connected);});
+        for(const [file,label] of [['connected-mesh.obj','Connected mesh OBJ (artistic)'],['connected-depth.png','Connected depth PNG (artistic)'],['connected-surface.npz','Connected height + synthetic mask']]){const a=document.createElement('a');a.className='web-link';a.href=base+file;a.download='';a.textContent=label;assembly.querySelector('.actions').append(a);}
+      }
+      loadMesh(false).catch(e=>notice(e.message,true));
+    }
     $('#typology-export').onclick=attempt(async()=>{await runJob('typology_export',{id:board.id},result=>{const a=document.createElement('a');a.href='/api/downloads/'+result.id;a.download='private-typology.zip';a.click();});});
   }
   $('#typology-close').onclick=()=>$('#typology-inspector').close();
@@ -105,6 +142,6 @@ export async function mountTypology(root,{api,getState,refresh,runJob,notice,esc
     if(miniStream?.active)await showStream();
     else status(found.length?'Mini detected. Connect when ready.':'Use Start-Material-Studio.cmd to enable camera access in the dedicated Chrome window, or plug in your Mini and refresh. Saved images can still be compared.');
   }catch(error){setConnected(false);status(error.message);}
-  return ()=>{disposed=true;miniStream?.getVideoTracks().forEach(track=>track.onended=null);};
+  return ()=>{disposed=true;boardGeneration++;boardViewer?.dispose();miniStream?.getVideoTracks().forEach(track=>{track.onended=null;track.stop();});miniStream=null;miniDevice=null;};
 }
 window.addEventListener('beforeunload',()=>miniStream?.getTracks().forEach(track=>track.stop()));

@@ -1,8 +1,11 @@
 # GelSight Material Studio
 
 Material Studio adds a local owner workspace to the original GelSight Mini viewer.
-Its six modes are Surface Capture, Tactile Atlas, Brush & Material Lab, Print
-Studio, Material Gallery, and Texture Dictionary. The original camera viewer is
+Its modes are Surface Capture, Tactile Atlas, Brush & Material Lab, Print
+Studio, Material Gallery, Texture Dictionary, Live Typology and p5 Live Capture,
+plus the separate Texture Unfolding program. The [README mode guide](../README.md)
+explains controls, resolutions, background subtraction and coordinated 3D/depth/normal
+typology exports. The original camera viewer is
 preserved under `/gelsight_p5/` and linked from the sidebar.
 
 ## Start on Windows
