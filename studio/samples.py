@@ -9,6 +9,41 @@ from .inputs import image_array, import_bytes
 from .records import CaptureSession, SurfacePatch, uid, now
 
 
+def export_capture_surface(directory, depth, mask=None):
+    """Full solver grid, without screenshot Z exaggeration or per-image scaling."""
+    from .surface import normals_from_height
+    valid=np.isfinite(depth) if mask is None else np.asarray(mask,bool)&np.isfinite(depth)
+    normals,normal_mask=normals_from_height(depth,mask=valid)
+    encoded=np.rint((normals*.5+.5)*255).astype(np.uint8)
+    Image.fromarray(encoded).save(directory/'normal.png')
+    dx=encoded.copy();dx[...,1]=255-dx[...,1]
+    Image.fromarray(dx).save(directory/'normal-directx.png')
+    np.save(directory/'normals.npy',normals,allow_pickle=False)
+    Image.fromarray((valid*255).astype(np.uint8)).save(directory/'mask.png')
+    Image.fromarray((normal_mask*255).astype(np.uint8)).save(directory/'normal-mask.png')
+    h,w=depth.shape
+    indices=np.zeros(depth.shape,int);indices[valid]=np.arange(1,int(valid.sum())+1);triangles=0
+    with (directory/'mesh.obj').open('w',encoding='utf-8') as out:
+        out.write('# Relative p5 relief. XY: model pixels; Z: solver values. Not millimeters.\n')
+        for y in range(h):
+            for x in range(w):
+                if valid[y,x]:out.write(f'v {x-(w-1)/2:g} {(h-1)/2-y:g} {float(depth[y,x]):.9g}\n')
+        for y in range(h-1):
+            for x in range(w-1):
+                if valid[y:y+2,x:x+2].all():
+                    a,b,c,d=indices[y,x],indices[y,x+1],indices[y+1,x],indices[y+1,x+1]
+                    out.write(f'f {a} {c} {b}\nf {b} {c} {d}\n');triangles+=2
+    return dict(depth='depth.npy',depth_preview='depth.png',rgb='raw.png',
+        normal_opengl='normal.png',normal_directx='normal-directx.png',normals='normals.npy',
+        mesh='mesh.obj',mesh_view='mesh.png',mask='mask.png',normal_mask='normal-mask.png',
+        geometry=dict(width=w,height=h,vertices=int(valid.sum()),triangles=triangles,
+            xy_spacing=[1,1],xy_units='model pixels',z_units='relative solver values',
+            axes='X right, Y up, Z out; array rows down',
+            normal_convention='OpenGL +Y; DirectX PNG flips green',
+            normal_method='Finite differences of the saved depth at unit model-pixel spacing',
+            display_exaggeration_applied=False,metric_validated=False))
+
+
 def crop_box(size, rect=(.1, .1, .8, .8)):
     x, y, w, h = map(float, rect)
     if not all(np.isfinite([x,y,w,h])) or not (0<=x<1 and 0<=y<1 and w>0 and h>0 and x+w<=1.000001 and y+h<=1.000001):
@@ -74,6 +109,7 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
     cropped.save(directory/'raw.png')
     for data,filename in zip(previews,('mesh.png','depth.png')):Image.fromarray(data).save(directory/filename)
     np.save(directory/'depth.npy',depth,allow_pickle=False)
+    assets=export_capture_surface(directory,depth)
     if baseline is not None:np.save(directory/'baseline.npy',baseline,allow_pickle=False)
     if reference is not None:
         import cv2
@@ -90,10 +126,11 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
     record=dict(id=record_id,created_at=now(),name=title,directory='samples/'+record_id,
         frame_id=frame['id'],patch_id=patch.id,session_id=session.id,synthetic=synthetic,
         source_sha256=frame['sha256'],crop=rect,crop_pixels=list(box),metadata=metadata,
+        assets=assets,
         background=dict(available=reference is not None,threshold=threshold,difference_gain=3,
             method='Absolute RGB delta from averaged no-contact model input; clean image uses a thresholded contact alpha mask.',
             depth='p5 depth already subtracts its depth baseline; never subtract it twice'),
-        interpretation='Synchronized p5 RGB, relative solver depth, and current camera mesh view. No metric calibration.')
+        interpretation='Synchronized p5 RGB and relative solver depth; normal maps and actual OBJ derived from that frozen depth, plus current camera mesh screenshot. No metric calibration.')
     (directory/'sample.json').write_text(json.dumps(record,indent=2,allow_nan=False),encoding='utf-8')
     store.save('samples',record)
     frame['settings']['sample_id']=record_id;store.save('frames',frame)

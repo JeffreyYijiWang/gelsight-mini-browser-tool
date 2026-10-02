@@ -12,10 +12,13 @@ import time
 from .records import uid, now
 from .store import Store
 
-KINDS={"demo","reconstruct","derive","analyze","material","atlas","print","project_mesh","impression","typology","typology_surface","typology_export","unfold","unfold_export","dictionary_preview","dictionary_build","exhibition_export","texture_export","gallery_export","atlas_export","print_export","video"}
+KINDS={"demo","reconstruct","derive","analyze","material","atlas","print","project_mesh","impression","typology","typology_surface","typology_export","unfold","unfold_export","dictionary_preview","dictionary_build","exhibition_export","texture_export","gallery_export","atlas_export","print_export","video","video_frames"}
 
 
 def dispatch(store,kind,params,progress=None):
+    if kind=='video_frames':
+        from .video_capture import extract_recording
+        return extract_recording(store,params['id'],params.get('stride',10),params.get('max_frames',60),progress,params.get('_job_id'))
     if kind=='typology_surface':
         from .typology import upgrade_typology
         return upgrade_typology(store,params['id'])
@@ -102,7 +105,8 @@ def worker(root,job_id):
         store.save("jobs",job)
     job.update(status="running",message="Starting CPU processing",started_at=now());store.save("jobs",job)
     try:
-        result=dispatch(store,job["kind"],job["params"],progress)
+        params={**job['params'],'_job_id':job_id} if job['kind']=='video_frames' else job['params']
+        result=dispatch(store,job["kind"],params,progress)
         job.update(status="completed",progress=1.,message="Completed",result=result,finished_at=now())
     except Exception as exc:
         job.update(status="failed",message=str(exc),error_type=type(exc).__name__,finished_at=now())
@@ -147,7 +151,7 @@ class Jobs:
             env={**os.environ,"OPENBLAS_NUM_THREADS":"2","OMP_NUM_THREADS":"2"}
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform=='win32' else 0
             process=subprocess.Popen([sys.executable,'-m','studio','worker','--data',str(self.store.root),'--job',job['id']],cwd=Path(__file__).resolve().parents[1],
-                                     env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=creationflags)
+                                     env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=creationflags,start_new_session=sys.platform!='win32')
             self.processes[job['id']]=process
             threading.Thread(target=self._monitor,args=(job['id'],process),daemon=True).start()
             return job
@@ -167,11 +171,29 @@ class Jobs:
 
     def cancel(self,job_id,message="Cancelled by owner"):
         process=self.processes.get(job_id)
-        if process and process.poll() is None:
-            process.terminate();process.wait(timeout=10)
         job=self.store.get('jobs',job_id)
+        if process and process.poll() is None:
+            if job['kind']=='video_frames':
+                if sys.platform=='win32':
+                    subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],capture_output=True,creationflags=subprocess.CREATE_NO_WINDOW,timeout=10)
+                else:
+                    import signal
+                    try:os.killpg(process.pid,signal.SIGTERM)
+                    except ProcessLookupError:pass
+            else:process.terminate()
+            process.wait(timeout=10)
         if job['status'] in ('queued','running'):
             job.update(status='cancelled',message=message,finished_at=now());self.store.save('jobs',job)
+            if job['kind']=='video_frames':
+                import shutil
+                for run in self.store.list('video_runs'):
+                    if run.get('job_id')!=job_id or run['status']=='completed':continue
+                    run.update(status='cancelled',error=message);self.store.save('video_runs',run)
+                    directory=self.store.path(run['directory'])
+                    (directory/'manifest.json').write_text(json.dumps(run,indent=2),encoding='utf-8')
+                    for staging in directory.glob('frames-*'):
+                        resolved=staging.resolve()
+                        if resolved.parent==directory and resolved.is_dir():shutil.rmtree(resolved)
         return job
 
     def close(self):

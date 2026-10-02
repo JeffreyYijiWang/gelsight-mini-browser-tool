@@ -5,6 +5,15 @@ await mkdir('test-artifacts',{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const context=await browser.newContext({viewport:{width:1512,height:1050},acceptDownloads:true});
 const page=await context.newPage(),errors=[],report={};page.on('pageerror',e=>errors.push(e.message));
+async function checkDownload(link){
+  const response=await context.request.get(new URL(await link.getAttribute('href'),origin).href);
+  if(!response.ok()||(await response.body()).length===0)throw new Error('Empty or failed asset response');
+  const pending=page.waitForEvent('download',{timeout:30000});await link.click();
+  const download=await pending;
+  // Chrome download scanning may never finish in this headless environment.
+  // Verify bytes over the authenticated response and the actual UI download event.
+  await download.cancel();
+}
 try{
   await page.goto(origin+'/#p5');await page.waitForFunction(()=>document.querySelector('#workspace')?.getAttribute('aria-busy')==='false');
   await page.waitForFunction(()=>document.querySelector('#p5-viewer')?.contentWindow?.studioP5?.ready(),null,{timeout:60000});
@@ -24,6 +33,10 @@ try{
     await page.locator('#p5-save').click();await page.waitForFunction(()=>document.querySelector('#p5-save-status').textContent.startsWith('Saved ')||document.querySelector('#notice').classList.contains('error'),null,{timeout:120000});
     if(await page.locator('#notice').evaluate(e=>e.classList.contains('error')))throw new Error(await page.locator('#p5-save-status').textContent());
     const saved=await(await captureResponse).json();ids.push(saved.frame.id);
+    if(saved.sample.assets?.mesh!=='mesh.obj')throw new Error('Capture missing associated geometry');
+    for(const label of ['RGB PNG','Float depth NPY','OpenGL normal PNG','DirectX normal PNG','3D mesh OBJ']){
+      await checkDownload(page.locator('#p5-assets').getByRole('link',{name:label,exact:true}));
+    }
   }
   report.synchronized_bundles=true;
   await page.screenshot({path:'test-artifacts/p5-studio.png'});
@@ -32,10 +45,14 @@ try{
   const title='Synchronized views '+Date.now();await page.locator('#typology-form [name="name"]').fill(title);
   await page.locator('#typology-build').click();await page.getByRole('heading',{name:title,exact:true}).waitFor({timeout:120000});
   await page.waitForFunction(()=>document.querySelector('#workspace').getAttribute('aria-busy')==='false'&&document.querySelector('#job-panel').hidden);
-  for(const view of ['raw','depth','mesh'])for(const suffix of ['images only','with names']){
+  for(const view of ['raw','depth','normal','mesh'])for(const suffix of ['images only','with names']){
     const download=page.waitForEvent('download');await page.getByRole('link',{name:view+' '+suffix,exact:true}).click();await download;
   }
-  report.all_six_sheets=true;await page.screenshot({path:'test-artifacts/p5-typology.png'});
+  report.all_eight_sheets=true;
+  await page.locator('[data-inspect="0"]').click();
+  await checkDownload(page.locator('#typology-sample-assets').getByRole('link',{name:'3D mesh OBJ',exact:true}));
+  await page.locator('#typology-close').click();report.capture_assets_downloads=true;
+  await page.screenshot({path:'test-artifacts/p5-typology.png'});
   await page.locator('#typology-surface-view canvas').waitFor();
   await page.locator('#typology-show-depth').click();await page.locator('#typology-stitched-depth').waitFor();
   await page.locator('#typology-show-mesh').click();await page.locator('#typology-wire').check();
@@ -51,8 +68,7 @@ try{
       await page.locator('#typology-normal-convention').selectOption(convention);
       const file=`${connected?'connected':'stitched'}-normal-${convention}.png`;
       await page.waitForFunction(file=>{const img=document.querySelector('#typology-stitched-depth');return !img.hidden&&img.src.endsWith(file)&&img.complete&&img.naturalWidth>0;},file);
-      const download=page.waitForEvent('download');await page.locator(`a[href$="/${file}"]`).click();
-      const saved=await download;if(await saved.failure())throw new Error('Normal PNG download failed');
+      await checkDownload(page.locator(`a[href$="/${file}"]`));
     }
   }
   await normalPreview.screenshot({path:'test-artifacts/typology-normal-map.png'});

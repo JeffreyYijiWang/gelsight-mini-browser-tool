@@ -31,14 +31,27 @@ def test_sample_keeps_original_and_exact_crop_and_relative_depth(tmp_path):
     assert source_image(store,'frames',frame['id'])[0].size==(256,192)
     assert np.allclose(arrays['height'],payload['depth']) and 'baseline' in arrays
     assert patch.units=='relative' and patch.state=='uncalibrated' and patch.pixel_spacing is None
+    import trimesh
+    folder=store.path(sample['directory']);mesh=trimesh.load(folder/'mesh.obj',process=False,force='mesh')
+    assert len(mesh.vertices)==320*240 and len(mesh.faces)==2*319*239
+    assert np.allclose(mesh.vertices[:,2].reshape(240,320),arrays['height'],atol=1e-8)
+    assert np.all(mesh.face_normals[:,2]>0)
+    normals=np.load(folder/'normals.npy');gy,gx=np.gradient(arrays['height'])
+    expected=np.stack((-gx,gy,np.ones_like(gx)),axis=-1);expected/=np.linalg.norm(expected,axis=-1,keepdims=True)
+    assert np.allclose(normals,expected,atol=1e-6)
+    gl=np.asarray(Image.open(folder/'normal.png'));dx=np.asarray(Image.open(folder/'normal-directx.png'))
+    assert np.all(gl[...,1].astype(int)+dx[...,1]==255)
+    assert np.allclose(gl/255*2-1,normals,atol=1/255+1e-7)
+    assert not sample['assets']['geometry']['metric_validated']
+    assert json.loads((folder/'sample.json').read_text())['assets']['mesh']=='mesh.obj'
 
 
 def test_synchronized_sheet_order_all_views_and_names(tmp_path):
     store=Store(tmp_path);samples=[capture(store,i)[0] for i in range(3)]
     board=build_typology(store,[{'kind':'frames','id':s['frame']['id']} for s in samples])
     for item in board['items']:
-        assert set(item['views'])=={'raw','depth','mesh'}
-    for view in ('raw','depth','mesh'):
+        assert set(item['views'])=={'raw','depth','normal','mesh'}
+    for view in ('raw','depth','normal','mesh'):
         assert (store.path(board['directory'])/(view+'-sheet.png')).is_file()
         assert (store.path(board['directory'])/(view+'-sheet-named.png')).is_file()
     assert all(s['frame']['sha256']==hashlib.sha256(store.path(s['frame']['raw_file']).read_bytes()).hexdigest() for s in samples)

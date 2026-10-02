@@ -1,8 +1,118 @@
-# Verification — updated 2026-09-24
+# Verification — updated 2026-10-01
+
+## Native matrix application — 2026-10-01
+
+- Dedicated Live GelSight tab follow-up: native synthetic UI smoke passed again
+  (`test-artifacts/native-4c1d47ac/smoke-report.json`). Checks confirm a fresh live
+  frame updates the independent preview without changing the selected capture or
+  its saved normal-map image; disconnect clears the preview. The existing baseline,
+  ragged-row capture, panorama, 3D and STL flow still passed. Compilation and diff
+  whitespace checks passed. This follow-up did not repeat hardware acquisition.
+
+- Added a separate Qt Widgets/OpenGL Python application. No WebEngine, HTML,
+  web server, cloud publication or edits to `gelsight_p5/` are part of this addition.
+- Full numerical suite passed **63 tests** (one existing Starlette/AnyIO
+  deprecation warning). A subsequent focused desktop run passed **5 tests**,
+  including one newly added positive registration test. Tests exercise unchanged
+  JavaScript marker-fill/DCT parity, crop geometry, the real Mini weight inference,
+  normal orientation, PLY point/surface reload, normal-textured GLB, full-grid solid
+  STL reload, ragged-row adjacency, missing-cell masks, rejected repetitive matches,
+  accepted distinctive normal-map translation, source tamper rejection, calibration
+  averaging, baseline/device compatibility, cancellation and revision persistence.
+- Native Qt smoke test passed with explicitly synthetic camera frames: 50-frame
+  baseline, three synchronized captures arranged `[2,1]`, 560×420 continuous
+  panorama, native mesh/point/normal-lighting modes, and a 940,796-triangle closed
+  STL with correct authored dimensions and successful reload. No GUI errors.
+  Final workflow report: `test-artifacts/native-39f7c428/smoke-report.json`.
+  Native window screenshots were visually inspected; scrolling, brighter lighting
+  and a Fit Surface control were added after that inspection.
+- Actual hardware preview was verified: Windows sees **GelSight Mini R0B
+  65Y7-RDNB**, but Qt video enumeration returns empty on this host. FFmpeg DirectShow
+  advertises only 3280×2464 MJPEG at 25 fps; requesting 640×480 input fails. Opening
+  the advertised mode succeeded (50 frames in the command-line stream check).
+  The native window then received **11 real frames**, delivered as 640×480 RGB,
+  and released the device cleanly. Evidence:
+  `test-artifacts/native-182785df/smoke-report.json` and `hardware-preview.png`.
+  **No physical untouched baseline, real capture matrix, measured reconstruction
+  accuracy, hardware stitching, slicer run or physical print is claimed.**
+- Synthetic example generation passed again: tile maximum source error
+  0.04991385 mm within 0.05 mm; coupon 0.05998882 mm within 0.06 mm; atlas one island
+  with ten accepted links. Local synthetic publication preview remains a draft.
+- Existing `tools/verify-studio.mjs` passed against an isolated owner server on
+  port 8091: material geometry, STL/3MF reload, private specimen editing, static
+  export, mobile layout and no page errors. Public entry count remained zero.
+- Original `tools/verify_gelsight_p5.js` could not launch its expected Playwright
+  headless-shell executable. Retrying with installed Chrome through an ignored
+  test wrapper reached the original app but timed out waiting for startup state
+  (`cv` and `session`, 30 seconds). No fresh standalone-p5 pass is claimed.
+  Original p5 assets are unchanged. Diff whitespace checks passed.
+
+Scientific/functional limits: Mini depth remains relative. The desktop port uses
+the upstream DCT recipe but full-resolution inference and no temporal mixing;
+CPU preprocessing is not asserted browser-pixel-identical. Matrix matching uses
+normal-map features and near-translation gates. Unmatched regions use recorded
+grid priors. Relative-height leveling, overlap blending and filling missing ragged
+cells produce an explicitly artistic continuous surface; final normals derive from
+that field. Source/coverage/synthetic masks and failed-match reports remain available.
+The normal-material GLB is a separate flat inspection plane. Print geometry uses
+actual height samples, authored mm scale and a closed backing, with physical
+manufacturing readiness explicitly unverified.
+
+## Video Capture — 2026-09-29
+
+- Full numerical regression suite: **59 passed**, with one existing non-failing
+  Starlette/AnyIO deprecation warning. JavaScript syntax and diff whitespace checks passed.
+- Numerical coverage adds a real FFmpeg lossless video fixture. Checks cover
+  extraction intervals and timestamps, frame limits, immutable video hashes,
+  aligned central-80% RGB/depth/normal/mesh fields, OBJ Z reload and winding,
+  invalid-mask holes, separate extraction revisions, baseline rejection and
+  decoder failures recorded as failed runs. The synthetic example generator
+  passed again with the existing tile/coupon fidelity bounds and atlas checks.
+- `node tools/verify-video-capture.mjs` passed with Chrome's explicitly synthetic
+  file-backed camera: Start/Stop MediaRecorder, video review, stream release on
+  navigation, retained stopped video, FFmpeg extraction of frames 0 and 5, linked
+  RGB/depth/normal/OBJ delivery, saved-video access, reload, mobile layout and
+  cancellation. No page errors. Screenshot and JSON report are in the ignored
+  `test-artifacts/video-capture*` files. This is not a hardware-camera test.
+- Early harness runs exposed unreliable detached-canvas recording and premature
+  reads of older results. The harness now generates a file-backed camera fixture,
+  waits for actual MediaRecorder data and the exact new collection. Recording
+  duration uses monotonic time; empty recordings produce an actionable message.
+- FFmpeg is installed here at `C:\FFmpeg\bin\ffmpeg.exe` (7.1 essentials build).
+  Each run freezes its tool version, source hash, frame indices, presentation times
+  and limits. Failed/rejected frames never acquire fabricated depth. Offline
+  reconstruction remains relative and is distinct from the live p5 solver.
+- The original `gelsight_p5/` files remain unchanged. No new physical calibration,
+  manufacturing or public dictionary deployment is claimed.
+
+## Complete per-capture assets — 2026-09-29
+
+- All **57 numerical tests passed**. Capture checks now reload the actual OBJ
+  (76,800 vertices / 152,482 triangles), compare its Z values with saved float
+  depth, verify upward triangle winding, compare float normals with depth
+  gradients, check PNG quantization/green inversion, and verify sample asset links.
+  Coordinated sheet tests now cover per-capture normals as well as RGB/depth/mesh.
+- The synthetic example generator completed successfully again. No new hardware
+  capture or physical calibration is claimed; tests use labeled synthetic inputs.
+- Per-capture meshes preserve solver Z and use model-pixel XY spacing. They are
+  open surfaces, not manufacturing solids. Existing samples are not migrated.
+- The expanded p5/typology/unfolding browser smoke passed with no page errors:
+  complete capture asset metadata, RGB/depth/normal/OBJ links, authenticated
+  nonempty asset responses, download events, saved-board sample links and eight
+  coordinated sheets. Existing assembly/unfolding views and mobile checks passed.
+  One initial run stalled awaiting Chrome download completion; the harness now
+  checks response bytes and UI download events, then cancels the test download.
+  That verifies delivery and wiring, not completion of Chrome's local save step.
+- JavaScript syntax checks and `git diff --check` passed. The unchanged standalone
+  p5 regression was attempted but stopped after it stalled without a result;
+  no fresh standalone-regression pass is claimed for this update. The complete
+  embedded p5 capture browser workflow above passed. Prior standalone evidence
+  below remains dated to its earlier run.
+
 
 ## Implemented and checked
 
-`python -m pytest -q`: **57 passed**. One non-failing deprecation warning originates
+`python -m pytest -q`: **59 passed**. One non-failing deprecation warning originates
 from Starlette's use of an AnyIO alias. Checks cover:
 
 - Flat/ramp normal orientation, DirectX sign, physical spacing, masked integration

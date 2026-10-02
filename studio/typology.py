@@ -169,7 +169,7 @@ def build_typology(store, items, name='Texture typology', settings=None, progres
             sample_id=next((s['id'] for s in store.list('samples') if s['patch_id']==item_id),None)
         if sample_id:
             sample=store.get('samples',sample_id);entry['sample_id']=sample_id;entry['views']={}
-            for view in ('raw','depth','mesh','clean','difference'):
+            for view in ('raw','depth','normal','mesh','clean','difference'):
                 if not (store.path(sample['directory'])/(view+'.png')).is_file():continue
                 target=f'{view}-{i:04}.png'
                 with Image.open(store.path(sample['directory'])/(view+'.png')) as im:
@@ -203,7 +203,7 @@ def build_typology(store, items, name='Texture typology', settings=None, progres
     _contact_sheet(directory, record)
     if any(e.get('views') for e in entries):
         record['exports']['views']={}
-        for view in ('raw','depth','mesh','clean','difference'):
+        for view in ('raw','depth','normal','mesh','clean','difference'):
             _contact_sheet(directory,record,view,labels=False)
             _contact_sheet(directory,record,view,labels=True)
             record['exports']['views'][view]=f'{view}-sheet.png'

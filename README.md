@@ -1,5 +1,30 @@
 # GelSight-Mini View/Export Tool
 
+## Native Windows application — row-by-row surface capture
+
+Double-click **[Start-Desktop-Studio.cmd](Start-Desktop-Studio.cmd)** to open the
+separate Python/Qt application. It uses a native window and 3D viewport, with no
+HTML, browser or web server. Dependencies are installed on this computer.
+
+```powershell
+cd "C:\Users\Jeffr\OneDrive\Documents\GitHub\gelsight-mini-browser-tool"
+.\start-desktop.ps1
+```
+
+On a new computer run `.\start-desktop.ps1 -Setup` once. Connect the named Mini,
+calibrate with the gel untouched, then use **Capture cell →** and **Next row ↙**.
+The **Live GelSight** tab shows the current camera image independently of the
+saved images in **Captured maps**, including while adding cells to the matrix.
+Each cell saves RGB, cropped depth, normals, a mesh and point cloud. Unequal row
+lengths are supported. Build RGB/depth/normal panoramas, inspect the native 3D views,
+adjust relief depth, and export a closed STL solid. Normal-map texture baking is
+also included. The central 80% is used once for all surface outputs.
+
+See **[the desktop guide](docs/desktop-studio.md)** for configuration comparison
+with Golan's code, every mode, file formats, calibration, stitching and printing.
+Depth is relative; forced joins and missing-cell fills are marked synthetic.
+Digital solid validation does not replace printer/slicer or physical validation.
+
 ## Material Studio and Texture Dictionary
 
 The new [Material Studio guide](docs/studio.md) covers the local capture, atlas,
@@ -13,9 +38,45 @@ by owner request; example captures remain local drafts.
 For the connected Mini and image typologies, double-click
 **[Start-Material-Studio.cmd](Start-Material-Studio.cmd)**. It opens a dedicated
 Chrome window with the Mini connected and **p5 Live Capture** ready.
-Capture named RGB/depth/mesh bundles, then use **Live Typology** to compare them using the actual
+Capture named RGB/depth/normal/mesh bundles, then use **Live Typology** to compare them using the actual
 [ShuffleSnap](https://github.com/kylemcdonald/shufflesnap) package.
 See [the capture and typology guide](docs/mini-typology.md). Everything remains local.
+
+### Open Studio on Windows
+
+Open **PowerShell**, paste these commands, and press Enter:
+
+```powershell
+cd "C:\Users\Jeffr\OneDrive\Documents\GitHub\gelsight-mini-browser-tool"
+.\start-studio.ps1 -OpenBrowser
+```
+
+This starts the local server if needed and opens the dedicated Chrome window for
+the GelSight Mini. You can also double-click **Start-Material-Studio.cmd** in the
+project folder. Keep the Mini plugged in and close any other app using its camera.
+If Studio is already running, use its existing Chrome window and refresh it after
+an update. Open **08 p5 Live Capture** to save all capture assets together.
+
+For a server without opening Chrome, run this instead (keep PowerShell open):
+
+```powershell
+cd "C:\Users\Jeffr\OneDrive\Documents\GitHub\gelsight-mini-browser-tool"
+.\.venv-studio\Scripts\python.exe -m studio serve --port 8090
+```
+
+Then visit http://127.0.0.1:8090. Stop that foreground server with **Ctrl+C**.
+Use the dedicated Chrome launcher above for the configured camera permission.
+Do not start a second server if port 8090 is already running Studio.
+
+Only for a **fresh installation**, install Python 3.11, Node.js 20+ and Chrome,
+then run this once from the project folder before the launch command:
+
+```powershell
+py -3.11 -m venv .venv-studio
+.\.venv-studio\Scripts\python.exe -m pip install -r requirements-studio.txt
+npm ci
+npm run setup:web
+```
 
 ### All Studio modes
 
@@ -27,9 +88,56 @@ See [the capture and typology guide](docs/mini-typology.md). Everything remains 
 | 04 Print Studio | Bake relief into tiles, curved swatches, spheres or coupons. Supply dimensions or validated metric data, inspect geometric validation and export STL/3MF. Slicer/physical tests are separate. |
 | 05 Material Gallery | Compare saved materials; export a backend-free gallery containing only selected assets. |
 | 06 Texture Dictionary | Collect specimens, make reproducible gyotaku-inspired prints and pressure proofs, choose covers and public snapshots. Public specimens require explicit selection; the public collection remains empty. |
-| 07 Live Typology | Quick RGB capture and ShuffleSnap comparison grids; coordinated raw/depth/mesh/clear-background sheets, actual assembled 3D relief, combined depth and normal maps in the same layout. |
+| 07 Live Typology | Quick RGB-only capture and ShuffleSnap comparison grids; coordinated raw/depth/normal/mesh/clear-background sheets, actual assembled 3D relief, combined depth and normal maps in the same layout. |
 | 08 p5 Live Capture | Embedded original p5 acquisition, controls, live depth and mesh. Calibrate without contact, name a sample and save all views together. |
 | 09 Texture Unfolding | Separate program at `/unfold`: segment textures, propose neighboring regions, inspect a flat image, flat 3D mesh and wrapped ball. Joins are inferred artistic arrangements. |
+| 10 Video Capture | Live Mini video with Start/Stop, playback and private original storage. FFmpeg extracts photos, then offline reconstruction generates associated cropped depth, normal maps and actual OBJ meshes. |
+
+### Record video and extract complete samples
+
+Launch Studio with the commands above, then open **10 Video Capture** (or
+http://127.0.0.1:8090/#video). FFmpeg must be installed and available on `PATH`;
+check with `ffmpeg -version` in PowerShell. On this machine it is installed in
+`C:\FFmpeg\bin`. Restart Studio after changing `PATH`.
+
+1. Select the named GelSight Mini, choose a resolution and click **Connect Mini**.
+   The preview is live; saving starts only when you click **Start recording**.
+2. Optionally lift clear of contact and click **Save untouched reference** before
+   recording. This explicit reference supports background subtraction in offline
+   reconstruction; it does not calibrate millimeters. Reconnecting clears it.
+3. Click **Start recording**, move between surfaces, then **Stop recording**.
+   Recording stops automatically at 10 minutes or approximately 120 MiB. Audio is
+   not recorded. You can play back or download the stopped video. Leaving the mode
+   stops the camera; the stopped recording stays in this browser tab until upload,
+   replacement or closing/reloading the tab.
+4. Choose **Extract every Nth frame** and **Maximum photos**, then click
+   **Extract frames + depth + normals + mesh**. For example, every 10th frame of
+   30 fps video gives about three photos per second. The default cap of 60 photos
+   covers about 20 seconds in that example; increase the interval for longer takes.
+5. FFmpeg decodes the first 10 minutes, extracting up to 120 selected photos per
+   job. Large frames are reduced to fit 1280 × 960 without stretching. The uploaded
+   video remains immutable. Each extracted full frame is preserved separately.
+6. Every successful sample gets cropped RGB, a depth PNG and float depth, OpenGL/
+   DirectX normal maps, float normals, validity masks and an actual `mesh.obj`.
+   **All cover the same central 80% in X/Y: remove 10% from each edge once, before
+   depth reconstruction.** Normals and mesh derive from that cropped depth, so
+   they are not cropped a second time. Output pixel dimensions depend on the
+   bounded reconstruction grid; the field of view stays aligned.
+7. Review the extracted collection and download RGB/depth/normal/OBJ assets.
+   Choose its session in **Live Typology** to build comparison sheets. Saved
+   recordings can be played back and reprocessed with a different interval;
+   each extraction creates a new collection. Use **Cancel** in the job panel to
+   stop processing. Already saved photos remain available; an incomplete run is
+   not labeled completed.
+
+Video frames use the bundled Mini model and Studio's **offline masked Poisson
+solver**, not the live p5 solver, temporal smoothing or capture-time depth.
+Results are relative relief, not millimeters. Bad/blurred/non-contact frames may
+be rejected; their RGB remains with the reason, and missing depth is not fabricated.
+No live mesh screenshot is invented for an extracted frame. OBJ is actual geometry.
+Each run's manifest records the video hash, FFmpeg version, frame indices,
+timestamps, crop, limits and associated sample IDs. Uploads are capped at 128 MiB.
+Everything stays local; recording does not publish dictionary specimens.
 
 ### Live capture, depth and sensor calibration
 
@@ -52,16 +160,41 @@ Both produce a **320×240 depth grid**. More camera pixels do not add model deta
 4. Make steady contact. **Lambda** adjusts Poisson regularization; **Alpha** adjusts
    temporal input smoothing. **Z** exaggerates displayed mesh height and **#**
    switches interpolation. Drag to orbit/pan, scroll to zoom, double-click to reset.
-5. Name the sample and **Save RGB + depth + current mesh view**. Cropped RGB,
+5. Name the sample and **Save RGB + depth + normals + 3D mesh**. Cropped RGB,
    float solver depth, baseline if available, depth display, mesh screenshot and
    view settings are frozen from the same processing result. Smoothing can include
    previous frames. The screenshot retains your camera/Z settings; numerical
-   height does not include display exaggeration.
+   height does not include display exaggeration. Studio automatically derives
+   OpenGL/DirectX normal maps and an actual OBJ mesh from that frozen depth.
+   Download links appear directly below the save status.
 6. In **Live Typology**, select these RGB captures and build once. Download the
-   named contact sheet, plus **raw**, **depth** and **mesh** sheets, each with or
+   named contact sheet, plus **raw**, **depth**, **normal** and **mesh** sheets, each with or
    without names. Every sheet uses identical cells. Here raw means cropped RGB;
    full originals stay local. Older missing views say “Not captured.” Long PNG
    names wrap/truncate; HTML and JSON retain full names.
+
+Each new p5 capture has a single sample record linking all these files:
+
+| File | Contents |
+| --- | --- |
+| `raw.png` | Cropped RGB; the full original remains separately preserved. |
+| `depth.npy` / `depth.png` | Float relative solver depth / grayscale preview. |
+| `normal.png` / `normal-directx.png` | OpenGL (+Y) / DirectX (−Y) normal maps, derived from saved depth. Import as non-color data. |
+| `normals.npy` | Float OpenGL unit normals, shape 240 × 320 × 3. |
+| `mesh.obj` | Actual open relief surface: 76,800 vertices and 152,482 triangles, from the same depth grid. |
+| `mesh.png` | Screenshot of the chosen p5 mesh camera view. |
+| `sample.json` | Source references, crop, capture settings and asset/coordinate definitions. |
+
+The per-capture OBJ uses unit model-pixel XY spacing and unchanged solver Z values,
+with Y up. Normals use the same scale. These are relative coordinates, not mm;
+the OBJ is an open surface, not a print-ready solid. Display Z exaggeration changes
+the screenshot only. Typology assembly maps use their separately recorded display
+scale. Saved-board tiles also offer individual sample download links when available.
+Older captures are not silently rewritten.
+
+**Use p5 Live Capture for the complete bundle.** The explicitly labeled
+**Capture RGB only** shortcut in Live Typology remains an image-only capture;
+it cannot save synchronous depth from a model it is not running.
 
 **Actual 3D stitching and combined depth:** below a saved board, switch between
 **Stitched 3D meshes** and **Combined depth map**. The first assembles real source

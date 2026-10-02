@@ -31,6 +31,7 @@ python/.venv/
 python/venv/
 .venv-studio/
 studio-data/
+desktop-data/
 studio/web/vendor/
 examples/generated/
 test-artifacts/

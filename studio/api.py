@@ -61,7 +61,22 @@ def create_app(data_dir=None):
         response.headers['Cache-Control']='no-store';return response
     @app.get('/api/state')
     async def state():
-        return {kind:store.list(kind) for kind in ('sessions','frames','patches','materials','atlases','prints','calibrations','printers','specimens','impressions','typologies','samples','unfoldings','jobs','exports')}
+        return {kind:store.list(kind) for kind in ('sessions','frames','patches','materials','atlases','prints','calibrations','printers','specimens','impressions','typologies','samples','unfoldings','recordings','video_runs','jobs','exports')}
+    @app.get('/api/video-capabilities')
+    async def video_capabilities():
+        import shutil
+        return {'ffmpeg':bool(shutil.which('ffmpeg'))}
+    @app.post('/api/video-recordings')
+    async def video_recording(file:UploadFile=File(...),device:str=Form(...),baseline:UploadFile|None=File(None),synthetic:bool=Form(False)):
+        from .video_capture import save_recording
+        from .inputs import MAX_UPLOAD
+        return save_recording(store,await file.read(MAX_UPLOAD+1),file.filename or 'recording.webm',device,
+            await baseline.read(16*1024*1024+1) if baseline else None,synthetic)
+    @app.get('/api/recordings/{record_id}/video')
+    async def recording_video(record_id:str):
+        recording=store.get('recordings',record_id)
+        path=store.path(recording['raw_file'])
+        return FileResponse(path,filename=recording['name']+path.suffix,content_disposition_type='inline')
     @app.get('/p5-studio')
     async def p5_studio():
         # Same original assets, with a Studio-only bridge. Standalone upstream is unchanged.
@@ -196,7 +211,7 @@ def create_app(data_dir=None):
         return FileResponse(store.path(frame['raw_file']))
     @app.get('/api/files/{kind}/{record_id}/{filename:path}')
     async def derived_file(kind:str,record_id:str,filename:str):
-        if kind not in ('materials','prints','impressions','atlases','typologies','samples','unfoldings'):raise HTTPException(404)
+        if kind not in ('materials','prints','impressions','atlases','typologies','samples','unfoldings','video_runs'):raise HTTPException(404)
         record=store.get(kind,record_id)
         directory=store.path(f'atlases/{record_id}' if kind=='atlases' else record['directory'])
         path=(directory/filename).resolve()

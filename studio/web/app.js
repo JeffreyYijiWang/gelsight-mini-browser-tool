@@ -3,6 +3,7 @@ import { DrawingLab } from './brush.js';
 import { mountInkPreview } from './ink-live.js';
 import { mountTypology } from './typology.js';
 import { mountP5 } from './p5-workspace.js';
+import { mountVideo } from './video-capture.js';
 
 const token=document.querySelector('meta[name="studio-token"]').content;
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -11,7 +12,9 @@ const typologyNav=document.createElement('button');typologyNav.dataset.mode='typ
 titles.p5='p5 Live Capture';
 const p5Nav=document.createElement('button');p5Nav.dataset.mode='p5';p5Nav.innerHTML='08 <span>p5 Live Capture</span>';document.querySelector('#modes').append(p5Nav);
 const unfoldLink=document.createElement('a');unfoldLink.href='/unfold';unfoldLink.target='_blank';unfoldLink.rel='noopener';unfoldLink.className='web-link';unfoldLink.textContent='09 Texture Unfolding ↗';document.querySelector('#modes').append(unfoldLink);
-let disposeP5=null;
+titles.video='Video Capture';
+const videoNav=document.createElement('button');videoNav.dataset.mode='video';videoNav.innerHTML='10 <span>Video Capture</span>';document.querySelector('#modes').append(videoNav);
+let disposeP5=null,disposeVideo=null;
 const regions=['custom','ankle','finger','fingertip','palm','nipple/areola','inner elbow','outer elbow','wrist'];
 let state={},mode=location.hash.slice(1)||'capture',selectedPatch=null,selectedFrame=null,selectedMaterial=null,selectedPrint=null,selectedAtlas=null,selectedSpecimen=new URLSearchParams(location.search).get('specimen');
 let viewers=[],drawing=null,cameraStream=null,analysis=null,atlasHistory=[],lastAtlasSettings={},jobId=null,disposeInk=null,disposeTypology=null;
@@ -55,11 +58,12 @@ async function render(){
   disposeInk?.();disposeInk=null;
   disposeTypology?.();disposeTypology=null;
   disposeP5?.();disposeP5=null;
+  disposeVideo?.();disposeVideo=null;
   if(mode!=='capture'){cameraStream?.getTracks().forEach(t=>t.stop());cameraStream=null;}
   viewers.forEach(v=>v.dispose());viewers=[];drawing?.dispose();drawing=null;
   if(!titles[mode])mode='capture';$('#mode-title').textContent=titles[mode];document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
   const patch=state.patches?.find(p=>p.id===selectedPatch);$('#source-status').textContent=patch?(patch.synthetic?'Synthetic · ':'')+patch.state+(patch.units==='mm'?' · mm':' · relative relief'):'No source selected';$('#source-status').className='status '+(patch?.synthetic?'synthetic':patch?.state||'');
-  await ({capture:renderCapture,atlas:renderAtlas,material:renderMaterial,print:renderPrint,gallery:renderGallery,dictionary:renderDictionary,typology:renderTypology,p5:async()=>{cameraStream?.getTracks().forEach(t=>t.stop());cameraStream=null;disposeP5=mountP5(workspace,{api,refresh,notice,esc,getState:()=>state});}}[mode])();wireActions();
+  await ({capture:renderCapture,atlas:renderAtlas,material:renderMaterial,print:renderPrint,gallery:renderGallery,dictionary:renderDictionary,typology:renderTypology,video:async()=>{disposeVideo=await mountVideo(workspace,{api,runJob,refresh,notice,esc,getState:()=>state});},p5:async()=>{cameraStream?.getTracks().forEach(t=>t.stop());cameraStream=null;disposeP5=mountP5(workspace,{api,refresh,notice,esc,getState:()=>state});}}[mode])();wireActions();
   }finally{
     workspace.inert=false;workspace.setAttribute('aria-busy','false');
     document.querySelectorAll('[data-mode],#refresh,#demo').forEach(button=>button.disabled=false);

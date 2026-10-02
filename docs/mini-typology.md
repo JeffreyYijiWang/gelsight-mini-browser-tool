@@ -5,17 +5,23 @@ starts the loopback Studio server when needed and opens a dedicated Chrome windo
 at `http://127.0.0.1:8090/#p5`. It selects only a camera whose driver label
 contains GelSight. Your ordinary Chrome profile is not changed.
 
-## Capture RGB, depth and current mesh views together
+## Capture RGB, depth, normals and 3D mesh together
 
 Use **p5 Live Capture** for all original resolution and processing controls. Set
 resolution/quality, lift off contact and calibrate 50 distinct frames. Name a
-sample and save its synchronized RGB/depth/mesh bundle. The default removes 10%
+sample and click **Save RGB + depth + normals + 3D mesh**. The default removes 10%
 from each edge; crop overrides and all view settings are recorded. Full RGB is
 retained. Float depth remains relative, and background subtraction is not metric
 calibration. Stale/in-progress calibration blocks saving.
 
+Each save derives normal PNGs (OpenGL/DirectX), float normals and an actual
+`mesh.obj` from the frozen 320 × 240 depth, alongside the mesh screenshot.
+The OBJ retains solver Z and unit model-pixel XY spacing, without display
+exaggeration or metric claims. Download individual assets after saving or from
+a saved board's tile inspector. See the README for launch commands and file details.
+
 Select these RGB captures in **Live Typology**, then build one ShuffleSnap grid.
-The named contact sheet and raw/depth/mesh sheets all use that same assignment.
+The named contact sheet and raw/depth/normal/mesh sheets all use that same assignment.
 Each view has named and image-only PNG downloads; missing historical views remain
 marked missing. Saved ZIPs include linked previews, full names and references.
 New live calibrations also average RGB to produce transparent-contact and absolute
@@ -30,6 +36,12 @@ inferred assembly with image, flat mesh and sphere views. See the README mode gu
 
 ## Quick RGB-only collection in Live Typology
 
+For a sequence, use **10 Video Capture**: Start/Stop recording, review, then choose
+the FFmpeg frame interval and photo limit. Successful extracted photos have linked
+depth, normal maps and OBJ geometry, all using the same 10%-per-edge crop. Select
+the extraction session in Live Typology. Rejected frames remain RGB with reasons.
+See the README's recording guide for limits and the offline solver distinction.
+
 1. Open mode 07, Live Typology, and plug in the Mini. Its panel should name the device and show its
    live image. On this computer, **GelSight Mini R0B 65Y7-RDNB** was verified at
    **640 × 480**. Use Connect Mini if it has not connected automatically.
@@ -37,7 +49,7 @@ inferred assembly with image, flat mesh and sphere views. See the README mode gu
    **Save no-contact baseline**. This records a background for relative relief
    reconstruction; it does not establish millimeter calibration.
 3. Place a surface against the gel, allow the image to settle, enter a sample name
-   such as “linen 01”, then click **Capture sample**. Repeat for each surface.
+   such as “linen 01”, then click **Capture RGB only**. Repeat for each surface.
 4. Each saved sample is selected for the next typology. Captures from this Mini
    stay in the chosen session. A new-session selection takes effect on the next
    saved baseline or sample. No continuous recording or automatic specimen
