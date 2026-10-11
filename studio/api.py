@@ -45,7 +45,7 @@ def create_app(data_dir=None):
                 origin=request.headers.get('origin')
                 if origin and origin!=str(request.base_url).rstrip('/'):return JSONResponse({"detail":"Cross-origin editing is not allowed."},status_code=403)
         response=await call_next(request)
-        if request.url.path.startswith('/api/'):
+        if request.url.path.startswith(('/api/', '/web/')):
             response.headers['Cache-Control']='no-store'
         response.headers['X-Content-Type-Options']='nosniff'
         response.headers['Referrer-Policy']='same-origin'
@@ -82,7 +82,7 @@ def create_app(data_dir=None):
         # Same original assets, with a Studio-only bridge. Standalone upstream is unchanged.
         page=(ROOT/'gelsight_p5/index.html').read_text(encoding='utf-8')
         page=page.replace('<head>','<head><base href="/gelsight_p5/">')
-        page=page.replace('</body>','<script src="/web/p5-bridge.js"></script></body>')
+        page=page.replace('</body>','<script src="/web/p5-bridge.js?v=damage-20261008"></script></body>')
         return HTMLResponse(page,headers={'Cache-Control':'no-store','X-Frame-Options':'SAMEORIGIN'})
     @app.get('/unfold')
     async def unfold_program():
@@ -122,11 +122,12 @@ def create_app(data_dir=None):
         from .camera import capture_frame
         return capture_frame(store,camera,name=options.get('name',''),session_id=options.get('session_id'),baseline=bool(options.get('baseline',False)))
     @app.post('/api/camera/browser-capture')
-    async def browser_capture(file:UploadFile=File(...),device_name:str=Form(...),device_id:str=Form(''),name:str=Form(''),session_id:str=Form(''),baseline:bool=Form(False)):
+    async def browser_capture(file:UploadFile=File(...),device_name:str=Form(...),device_id:str=Form(''),name:str=Form(''),session_id:str=Form(''),baseline:bool=Form(False),damage:str=Form('')):
         from .camera import save_capture
         from .inputs import MAX_UPLOAD
         data=await file.read(MAX_UPLOAD+1)
-        return save_capture(store,data,dict(name=device_name,id=device_id),name,session_id or None,baseline)
+        if len(damage)>20000: raise ValueError('Damage profile is too large.')
+        return save_capture(store,data,dict(name=device_name,id=device_id),name,session_id or None,baseline,json.loads(damage) if damage else None)
     @app.get('/api/typology/items')
     def typology_items():
         from .typology import catalog

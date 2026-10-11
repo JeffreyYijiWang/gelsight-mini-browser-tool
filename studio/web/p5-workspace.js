@@ -1,3 +1,4 @@
+import {damageEditor} from './damage-editor.js';
 export function mountP5(root,{api,refresh,notice,esc,getState}){
   const sessions=getState().sessions.filter(s=>s.sensor_id);
   root.innerHTML=`<section class="mode-intro"><div><h2>Touch, depth, and the view you chose.</h2><p>Golan Levin’s original p5 viewer, connected to your private collection.</p></div><a class="web-link" href="/unfold" target="_blank" rel="noopener">Open Texture Unfolding</a></section>
@@ -9,6 +10,8 @@ export function mountP5(root,{api,refresh,notice,esc,getState}){
   const frame=root.querySelector('#p5-viewer'),status=root.querySelector('#p5-save-status');
   const backgroundControl=document.createElement('label');backgroundControl.className='field';backgroundControl.innerHTML='<span>Clear-background threshold (RGB difference)</span><input id="p5-background-threshold" type="number" min="1" max="100" value="12"><small>Calibration also records averaged no-contact RGB. New live samples include a transparent contact image and a background-difference view; lower values keep fainter changes.</small>';status.before(backgroundControl);
   const bridge=()=>{const b=frame.contentWindow?.studioP5;if(!b?.ready())throw new Error('The p5 model is still loading. Try again shortly.');return b;};
+  const damageHost=document.createElement('div');frame.parentElement.before(damageHost);
+  damageEditor(damageHost,{reference:()=>bridge().damageReference(),apply:profile=>{const b=frame.contentWindow?.studioP5;if(b)b.setDamage(profile);},notice});
   const attempt=fn=>async()=>{try{await fn();}catch(error){status.textContent=error.message;notice(error.message,true);}};
   root.querySelector('#p5-center').onclick=attempt(async()=>{await bridge().centerCrop();status.textContent='Central 80% restored. Recalibrate before saving a live sample.';});
   root.querySelector('#p5-disconnect').onclick=attempt(()=>bridge().disconnect());
@@ -20,9 +23,10 @@ export function mountP5(root,{api,refresh,notice,esc,getState}){
       status.textContent='Images frozen. Saving the sample and depth arrays locally…';
       const result=await api('/samples/p5','POST',form);await refresh(false);
       const select=root.querySelector('#p5-session');if(![...select.options].some(o=>o.value===result.session.id))select.add(new Option(result.session.name,result.session.id));select.value=result.session.id;
-      status.textContent=`Saved ${result.sample.name}: RGB, relative depth, normal maps, actual 3D mesh and current mesh screenshot. Select the RGB capture in Live Typology for coordinated sheets.`;notice('Sample bundle saved locally.');
+      status.textContent=`Saved ${result.sample.name}: RGB, relative depth, normal maps, actual 3D mesh and current mesh screenshot. ${result.sample.sensor_damage?'Damage excluded from geometry; the original live mesh screenshot is unmasked and omitted from typology mesh sheets.':'Select the RGB capture in Live Typology for coordinated sheets.'}`;notice('Sample bundle saved locally.');
       root.querySelector('#p5-assets')?.remove();const assets=document.createElement('div');assets.id='p5-assets';assets.className='actions';
       for(const [file,label] of [['raw.png','RGB PNG'],['depth.png','Depth PNG'],['depth.npy','Float depth NPY'],['normal.png','OpenGL normal PNG'],['normal-directx.png','DirectX normal PNG'],['normals.npy','Float normals NPY'],['mesh.obj','3D mesh OBJ'],['mesh.png','Mesh screenshot'],['sample.json','Capture metadata']]){const a=document.createElement('a');a.className='web-link';a.href='/api/files/samples/'+result.sample.id+'/'+file;a.download='';a.textContent=label;assets.append(a);}status.after(assets);
+      if(result.sample.sensor_damage){for(const [file,label] of [['damage-mask.png','Excluded damage mask'],['mask.png','Depth validity mask'],['normal-mask.png','Normal validity mask']]){const a=document.createElement('a');a.className='web-link';a.href='/api/files/samples/'+result.sample.id+'/'+file;a.textContent=label;assets.append(a);}}
       root.querySelector('#p5-clean-result')?.remove();const clear=document.createElement('p');clear.id='p5-clean-result';
       if(result.sample.background?.available){const base='/api/files/samples/'+result.sample.id+'/';clear.innerHTML=`<a class="web-link" href="${base}clean.png" target="_blank" rel="noopener">Clear contact image</a> <a class="web-link" href="${base}difference.png" target="_blank" rel="noopener">RGB background difference</a>`;}
       else clear.textContent='No matching RGB background is available for this sample. Calibrate in the live Studio viewer to include the clear-background version.';

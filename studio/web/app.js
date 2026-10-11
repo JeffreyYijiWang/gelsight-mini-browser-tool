@@ -1,8 +1,8 @@
 import { SurfaceViewer } from './viewer.js';
 import { DrawingLab } from './brush.js';
 import { mountInkPreview } from './ink-live.js';
-import { mountTypology } from './typology.js';
-import { mountP5 } from './p5-workspace.js';
+import { mountTypology } from './typology.js?v=damage-20261008';
+import { mountP5 } from './p5-workspace.js?v=damage-20261008';
 import { mountVideo } from './video-capture.js';
 
 const token=document.querySelector('meta[name="studio-token"]').content;

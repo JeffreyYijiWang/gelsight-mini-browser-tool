@@ -331,3 +331,146 @@ hosting service's terminal success response; the local build was tested separate
 
 See `research-review.md` for algorithm differences and `studio.md` for setup,
 configuration, CPU budgets, calibration entry points and export interpretation.
+
+## Permanent gel damage exclusions — 2026-10-08
+
+- Added an explicit untouched-reference and ellipse-mask setup in browser Live
+  Typology and p5 Live Capture. No actual puncture location or untouched state was
+  inferred. Native Matrix Studio and Video Capture do not yet use this workflow.
+- Numerical suite: **67 passed** (one existing Starlette/AnyIO warning). Three new
+  tests cover crop-coordinate mapping, guard margins, rejected oversized masks,
+  frozen reference provenance, baseline/resolution mismatch rejection, immutable
+  RGB/depth exports, masked normals/OBJ and propagation into typology surfaces.
+- `tools/verify-damage-bridge.mjs` passed: the actual bridge binds the reference
+  to its 50-frame baseline and rejects stale references after calibration changes.
+  This is a VM fixture, not a live sensor calibration.
+- `tools/verify-sensor-damage.mjs` passed in an isolated store using a synthetic
+  camera: baseline, reference preview, marking, apply, capture metadata and
+  disconnect reset. No page errors. The first run timed out waiting for the
+  reference canvas; the repeat passed with diagnostic output enabled. Evidence:
+  `test-artifacts/sensor-damage-ui-report.json` and `sensor-damage-ui.png`.
+- Existing `tools/verify-studio.mjs` passed, including STL/3MF round trips, ink
+  export, dictionary owner flow and zero public entries. Synthetic generation
+  passed: tile max error 0.04991385 mm, coupon 0.05998882 mm, one atlas island
+  with ten accepted links. These are computational fixtures, not physical tests.
+- Original p5 regression passed: 76,800 finite depth samples, 152,482 OBJ
+  triangles and export metadata/encoding checks. Its default bundled Playwright
+  browser was absent, so the same script ran with installed Chrome selected
+  in memory. The original p5 source and regression file remain unchanged.
+- The owner server was restarted and its open p5 page verified to show the new
+  startup panel. Versioned changed entry modules and no-store owner web assets
+  prevent stale controls after updates. Screenshot: `test-artifacts/damage-startup-ready.png`.
+- No physical damaged-sensor capture, accuracy, slicer or print validation was
+  performed. Invalid pixels remain unknown. Original live mesh screenshots are
+  unmasked diagnostic views; new damaged captures omit them from typology mesh
+  sheets. Saved OBJ geometry and validity-masked depth/normals exclude the damage.
+  Original float depth is retained with a separate mask. Public data is unchanged.
+
+## All-collection high-resolution batch — 2026-10-08
+
+- Completed a private snapshot of **240 captures in eight sensor collections**:
+  four native projects (10, 20, 18 and 45 captures) and four browser Mini sessions
+  (27, 81, 1 and 38 samples). Baselines, synthetic fixtures and legacy non-sensor
+  imports are explicitly excluded in `inventory.json`; no public data changed.
+- Output: `desktop-data/typology-export-20261008-all/RESULTS.md`. All eight individual
+  boards and `ALL-COLLECTIONS` have complete manifests. Total output at completion
+  was approximately 7.4 GB. The combined RGB is **14,528 x 14,068**; height/normals
+  are **4,540 x 4,396**; the closed mesh contains **39,951,414 triangles**. Every
+  saved source depth sample is retained, with no geometry downsampling. Larger RGB
+  tiles interpolate smaller RGB sources; this is not additional measured detail.
+- Original native/p5 surfaces were reused. The 108 RGB-only frames received new
+  offline CPU Mini reconstruction. The older 27 use their explicit untouched
+  reference; the October 8 session's 81 have no reference and therefore no baseline
+  subtraction. These are relative results, not metric calibration or capture-time
+  reconstructions. Historical permanent-damage locations were not inferred.
+- ShuffleSnap 0.3.0 ran on texture descriptors and deterministic PCA for every
+  multi-image board. The single-image session is explicitly a direct placement.
+  Frozen assignments, features, source identities and hashes are retained.
+- Flat gaps and eight-pixel rim tapers are marked synthetic. Original height values
+  remain in separate arrays; per-source scaled/original error is recorded in
+  `fidelity.json`. Normal influence masks include neighboring synthetic pixels.
+  The global 300 mm width and 5 mm relief span are authored design dimensions.
+- Every output PLY was reopened through binary memory maps: all edges have exactly
+  two oppositely directed incidences; every triangle is nondegenerate; Euler
+  characteristic is 2; signed volume is positive. Connectivity follows the complete
+  rectangular grid/wall/bottom construction. Every STL triangle was reloaded and
+  compared exactly with serialized PLY coordinates. Small fixtures additionally
+  pass independent trimesh watertightness, winding and connected-component checks.
+- Numerical suite: **69 passed**, with the existing Starlette/AnyIO deprecation
+  warning. Synthetic example generation and Studio browser smoke passed; browser
+  report has no page errors and zero public entries. Original p5 regression passed
+  with installed Chrome selected in memory, preserving its source and test file.
+  Logs: `test-artifacts/collection-numerical-tests.log`, `collection-examples.log`,
+  `collection-browser-smoke.log` and `collection-original-p5.log`.
+- The initial foreground process was interrupted by the conversation continuation;
+  the batch resumed in a separate hidden Windows process. The first combined board
+  hit the initial 160-million-RGB-pixel limit. After checking available memory and
+  disk, the offline RGB limit was raised to 256 million; the resume path verified
+  and reused all eight finished boards. Final log: `collection-export-final.log`.
+  This does not change the native interactive 600,000-pixel assembly limit.
+- RGB and height/normal/shading previews were visually inspected. No new camera
+  capture, measured accuracy, Photoshop, slicer or physical print validation was
+  performed. These are artistic similarity compositions, not physical registration.
+
+## Supplied GelSight archive — labeled 0–11 studies (2026-10-08)
+
+- Source: the user-provided `gel_sight_data-20261008T193658Z-1-001.zip` in Downloads.
+  Its 2,191 files were safely extracted, hashed and preserved under the private
+  export's `source/` directory. `archive.json` records the ZIP and member hashes.
+  This operation did not acquire sensor frames or change existing collections.
+- Complete result: `desktop-data/gel-sight-archive-study-20261008/gallery.html`.
+  There are **124 captures in five collections and thirteen panel groups**.
+  Nine panels contain all twelve scans; Documentation has 1/3/3 scans and Spring
+  has nine. Every sheet uses the explicit 0–2 / 3–5 / 6–8 / 9–11 arrangement;
+  missing scans stay labeled empty. No similarity solver is used for this order.
+- Each panel has thirteen labeled image sheets. Each capture has full-resolution
+  OBJ, colored PLY and GLB surface models, original source layers and metadata,
+  copied float height and separately derived normals. Each panel also has a
+  closed authored STL/PLY composition, source/synthetic masks and fidelity report.
+  Every solid passes the collection exporter's edge, winding, positive-volume,
+  Euler-characteristic and exact STL-triangle round-trip checks.
+- Source depth is unchanged and declares millimeters with 0.0634 mm/pixel XY;
+  this declaration has **no independently verified physical calibration**.
+  No new crop, baseline subtraction, metric calibration or damage correction was
+  applied. Individual GLB coordinates convert source-declared mm to meters.
+  Perspective previews sample every fifth pixel and exaggerate Z by 12; model
+  files retain every source depth sample and do not add normal relief twice.
+  Combined panel solids use authored 300 mm width / 5 mm relief span, separately
+  from supplied source units. Synthetic gaps/tapers and source errors are retained.
+- All 124 force reports have zero tracked markers and null normal/shear Newton
+  values. All 124 supplied `shear_field.png` files are byte-identical to their
+  tactile images. Nonzero dense flow is retained as an unvalidated source array;
+  it is not evidence of successful marker tracking or measured shear force.
+- Seven variants per capture/panel: loading, shear, torsion, height layers,
+  height-sorted particle waves, RGB pixel tearing, and a static-layer sequence.
+  The six motion effects are deterministic artistic renderings; the layer sequence
+  is a presentation animation. They are not recorded force histories, physical
+  simulations, slip estimates or material failure predictions. Research references
+  and the distinction from GelSight marker experiments are in the README/gallery.
+- **Full artifact audit passed:** 13 panels, 124 captures, **959 GIFs**, **91 MP4s**,
+  **4,368 decoded video frames**, and all 2,191 source files. Every stored height
+  copy matches its supplied array exactly; derived float normals match source
+  spacing. All frozen panel file hashes match. GIF timing is checked after
+  repeated-frame coalescing and 10 ms quantization; actual per-file durations are
+  recorded in `test-artifacts/archive-full-validation.json`.
+- `models-labeled.zip` contains 124 self-identifying GLBs plus a model index and
+  units note (about 164 MB). ZIP CRC and model/source hashes were checked.
+  A completed `--resume` run verified the whole export and preserved the root
+  manifest hash exactly. Responsive `gallery.html` views are additive presentation
+  revisions; original panel/index manifests were not rewritten for the CSS fix.
+- Numerical suite: **76 passed**, with the existing Starlette/AnyIO deprecation
+  warning. After adding the declared-unit regression and render refinements,
+  the ten focused archive/twelve-cell/collection tests passed. `git diff --check`
+  and Python compilation checks passed. No unrelated working changes were reset.
+- Synthetic examples passed after retrying their data directory outside OneDrive;
+  the first attempt hit Windows `PermissionError` during a directory rename.
+  Studio browser smoke passed with no page errors and zero public entries.
+  Full and partial archive panels passed thirteen-layer/twelve-position checks,
+  actual MP4 playback, and phone-width layout checks. The overview passed checks
+  for all thirteen cards and 26 local panel links. Screenshots and the gallery
+  report are in `test-artifacts/archive-*`.
+- The original p5 regression was attempted with installed Chrome/software WebGL;
+  it stalled under excessive CPU load and was interrupted. No fresh p5-regression
+  pass is claimed for this turn. The original p5 application was not changed.
+  No new hardware, Photoshop, slicer, physical-print or force-calibration validation
+  was performed. Private source files and derivatives were not published.

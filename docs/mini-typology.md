@@ -157,3 +157,40 @@ it does not capture real surfaces. Hardware evidence is separately recorded in
 `test-artifacts/mini-browser-check.json` and the launcher's local status log.
 
 Algorithm/source: [Kyle McDonald's ShuffleSnap](https://github.com/kylemcdonald/shufflesnap).
+# Permanent gel damage reference — browser Studio
+
+For a permanent puncture, start each camera connection with the Mini untouched.
+Use **Save no-contact baseline** in Live Typology, or **Calibrate** in p5 Live
+Capture (wait for 50 distinct frames). The **Startup: permanent gel damage** panel
+then loads that reference. Click the puncture and surrounding disturbed area;
+the radius control affects subsequent marks. Undo changes draft marks; click
+**Use marked exclusions** to apply them. **Disable damage exclusions** explicitly
+returns new captures to the ordinary pipeline. Reconnect/session changes reset the
+quick-capture profile. p5 rejects saves with stale reference/crop/device geometry.
+
+Regions are normalized in full-source RGB coordinates, mapped through the recorded
+crop, and expanded by two pixels on the processing grid. Each new capture freezes
+the regions and reference identity/hash. Existing captures and boards are unchanged.
+Quick capture still saves RGB only; **Reconstruct last capture** uses its frozen
+baseline and excludes damaged pixels before masked normal integration. A conflicting
+baseline is rejected. Lens-undistorted calibration with damage masks is currently
+rejected because its mask would need the same warp.
+
+p5 already subtracts its depth baseline, so it is not subtracted again. p5 damage
+exclusion is applied to the saved surface, not a rerun of the live DCT solver.
+`depth.npy` retains original relative solver values: use `mask.png` with it.
+`damage-mask.png` is white at excluded pixels, `normal-mask.png` identifies usable
+normals, and `mesh.obj` omits excluded vertices and faces. The depth display and
+clean RGB have transparent exclusions. The original live `mesh.png` is an unmasked
+diagnostic screenshot and is omitted from corrected typology mesh sheets; actual
+stitched geometry instead uses the masked depth patch. No live-view correction or
+recovery of missing sensor information is claimed; effects can extend beyond the
+puncture, so mark a sufficient surrounding area.
+
+RGB typology comparison previews replace marked pixels with the median valid RGB
+to reduce their influence on descriptors. This replacement is display preprocessing,
+not an observation; board metadata records it. Raw RGB sheets retain actual images.
+Surface typologies honor validity masks; default meshes keep holes at excluded
+regions. No automatic synthetic fill or print-ready claim is introduced. This
+feature currently covers browser quick capture and p5, not Video Capture or the
+native Matrix application.

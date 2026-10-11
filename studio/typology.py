@@ -82,6 +82,12 @@ def source_image(store, kind, record_id):
         picture = Image.fromarray(np.rint(gray*255).astype(np.uint8)).convert('RGB')
         return picture, hashlib.sha256(store.path(patch.arrays).read_bytes()).hexdigest()
     with Image.open(path) as opened:
+        if kind=='frames' and record['settings'].get('sensor_damage'):
+            from .sensor_damage import damage_mask
+            pixels=np.asarray(opened.convert('RGB')).copy()
+            invalid=damage_mask(pixels.shape[:2],record['settings']['sensor_damage']['regions'])
+            pixels[invalid]=np.rint(np.median(pixels[~invalid],axis=0)).astype(np.uint8)
+            opened=Image.fromarray(pixels)
         if kind=='frames' and record['settings'].get('sample_crop'):
             from .samples import crop_box
             opened=opened.crop(crop_box(opened.size,record['settings']['sample_crop']))
@@ -162,6 +168,9 @@ def build_typology(store, items, name='Texture typology', settings=None, progres
         filename = f'image-{i:04}.webp'
         picture.save(directory/filename, quality=88)
         entry={**lookup[kind, item_id], 'source_sha256':digest, 'image':filename}
+        if kind=='frames' and store.get('frames',item_id)['settings'].get('sensor_damage'):
+            entry['sensor_damage']=store.get('frames',item_id)['settings']['sensor_damage']
+            entry['comparison_preprocessing']='Excluded sensor pixels replaced by median valid RGB for descriptors/previews; raw source unchanged, not repaired RGB.'
         # Frozen linked views share exactly one ShuffleSnap assignment. Missing
         # capture-time views stay missing; never fabricate an old mesh snapshot.
         sample_id=store.get('frames',item_id)['settings'].get('sample_id') if kind=='frames' else None
@@ -170,6 +179,7 @@ def build_typology(store, items, name='Texture typology', settings=None, progres
         if sample_id:
             sample=store.get('samples',sample_id);entry['sample_id']=sample_id;entry['views']={}
             for view in ('raw','depth','normal','mesh','clean','difference'):
+                if view=='mesh' and sample.get('sensor_damage'):continue  # screenshot is an unmasked diagnostic, not the corrected mesh
                 if not (store.path(sample['directory'])/(view+'.png')).is_file():continue
                 target=f'{view}-{i:04}.png'
                 with Image.open(store.path(sample['directory'])/(view+'.png')) as im:

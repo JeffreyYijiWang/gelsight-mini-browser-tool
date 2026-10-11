@@ -104,7 +104,12 @@ def reconstruct(store,frame_id,settings=None,progress=None):
     if frame["kind"]!="rgb": raise ValueError("Reconstruction expects a tactile RGB frame.")
     session=store.get("sessions",frame["session_id"])
     rgb=image_array(store.path(frame["raw_file"]).read_bytes())
-    baseline_id=settings.get("baseline_id") or session.get("baseline_id")
+    baseline_id=settings.get("baseline_id") or frame['settings'].get('baseline_id') or session.get("baseline_id")
+    damage=frame['settings'].get('sensor_damage')
+    if damage and not damage.get('baseline_id'):
+        raise ValueError('Use this p5 capture’s existing masked depth patch; RGB re-inference has no matching saved raw baseline.')
+    if damage and baseline_id!=damage['baseline_id']:
+        raise ValueError('Use the frozen damage-reference baseline for this capture.')
     baseline=None
     if baseline_id:
         baseline_frame=store.get("frames",baseline_id)
@@ -112,11 +117,13 @@ def reconstruct(store,frame_id,settings=None,progress=None):
         baseline=image_array(store.path(baseline_frame["raw_file"]).read_bytes())
     calibration=None
     crop=frame['settings'].get('sample_crop')
+    damage_crop=(0,0,1,1)
     if crop:
         from .samples import crop_box
         if baseline is not None and (baseline.shape!=rgb.shape or baseline_frame['settings'].get('sample_crop')!=crop):
             raise ValueError('Baseline resolution and crop must match this sample. Capture a new baseline.')
         x0,y0,x1,y1=crop_box((rgb.shape[1],rgb.shape[0]),crop)
+        damage_crop=(x0/rgb.shape[1],y0/rgb.shape[0],(x1-x0)/rgb.shape[1],(y1-y0)/rgb.shape[0])
         rgb=rgb[y0:y1,x0:x1]
         if baseline is not None:baseline=baseline[y0:y1,x0:x1]
         settings={**settings,'source_crop':crop}
@@ -131,6 +138,7 @@ def reconstruct(store,frame_id,settings=None,progress=None):
         model_path=BUNDLED_MODEL if calibration.weights=="bundled_mini" else store.path(calibration.weights)
         adapter=calibration.adapter
         if calibration.camera_matrix is not None:
+            if damage: raise ValueError('Damage masks with lens undistortion require a transformed calibration; use the relative Mini path.')
             matrix=np.asarray(calibration.camera_matrix,float); distortion=np.asarray(calibration.distortion or [],float)
             rgb=cv2.undistort(rgb,matrix,distortion)
             if baseline is not None: baseline=cv2.undistort(baseline,matrix,distortion)
@@ -140,6 +148,11 @@ def reconstruct(store,frame_id,settings=None,progress=None):
         if baseline is not None: baseline=cv2.resize(baseline,size,interpolation=cv2.INTER_AREA)
     if rgb.shape[0]*rgb.shape[1]>1_000_000: raise ValueError("Reconstruction exceeds the one-million-pixel budget.")
     mask,q=quality(rgb,baseline,border=int(settings.get("border",4)),marker_high=int(settings.get("marker_high",45)),contact_threshold=float(settings.get("contact_threshold",8)))
+    if damage:
+        from .sensor_damage import damage_mask
+        mask &= ~damage_mask(mask.shape,damage['regions'],damage_crop)
+        settings={**settings,'sensor_damage':damage}
+        q['damage_excluded']=True
     roi=settings.get("roi")
     if roi:
         x0,y0,x1,y1=[float(v) for v in roi]

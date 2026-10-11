@@ -210,6 +210,53 @@ status and evidence belong in `docs/studio-validation.md`, not in completion cla
 43. Native Live GelSight is a dedicated tab, independent of Captured maps and the
     3D viewport. Captures and matrix selection never replace its current camera
     image. Switching tabs preserves streaming; disconnecting clears the live preview.
+44. The user reported permanent puncture/damage in the Mini gel (2026-10-08).
+    Browser Live Typology and p5 Live Capture provide an explicit untouched-reference
+    damage editor. Store authored normalized full-source ellipses, reference identity/
+    hash and a two-processing-pixel exclusion margin in each new capture. Crop mapping
+    follows actual integer bounds. Never call excluded pixels repaired or measured.
+    Quick-capture reconstruction freezes its raw baseline and excludes damage before
+    masked integration. p5 keeps its original baseline-subtracted solver values and
+    excludes damage from saved geometry/normals without subtracting depth twice.
+    p5's live diagnostic screenshot remains unmasked and is omitted from corrected
+    typology mesh sheets. Recomputed typology surfaces retain the source validity mask.
+    Median replacement in RGB comparison previews/descriptors is display preprocessing,
+    not recovered texture. Original RGB and historical captures remain unchanged.
+    Require a fresh reference after reconnect/configuration changes; no automatic
+    no-contact inference or persisted unverified damage profile.
+
+45. High-resolution all-collection exports are a separate read-only batch command,
+    `python -m studio.collection_export`. Snapshot indexed native captures and
+    nonsynthetic sensor sessions; exclude untouched references and fixture imports.
+    Preserve each stored depth grid and source hashes. RGB-only frames may receive
+    explicitly labeled offline relative Mini inference; absent baselines remain
+    absent. Use actual ShuffleSnap for multi-image boards and freeze its assignment.
+    The user requested a continuous flat-filled composition: retain original heights,
+    record an eight-pixel synthetic taper to zero and flat gaps, derive normals from
+    the constructed field, and export a closed solid separately from source geometry.
+    Authored mm dimensions are display/print design, never measured sensor units.
+    This offline path permits up to 32 million height samples and 256 million RGB
+    pixels, with streamed mesh writing and disk-backed topology validation. It does
+    not raise the native interactive assembly budget. Verify every serialized edge,
+    winding, Euler characteristic, positive volume and STL triangle round trip.
+    Completed manifests are immutable; resume verifies sources and finished exports.
+
+46. Explicit twelve-cell studies use a fixed 3-column by 4-row layout: scans 0–2,
+    3–5, 6–8 and 9–11. Do not run similarity sorting on an authored order. The
+    supplied GelSight archive has 124 captures in five collections / thirteen
+    panel groups; preserve original folder and metadata labels, and leave absent
+    scans as labeled empty slots. Preserve and hash the ZIP and extracted files.
+    Source layers, supplied float depth and metadata remain unchanged. Archive
+    depth declares mm and 0.0634 mm/pixel, with unverified physical calibration;
+    preserve this distinction from relative solver units and authored board mm.
+47. Archive force reports have zero tracked markers and null Newton values.
+    Preserve supplied shear imagery and dense flow as unvalidated source outputs;
+    do not equate nonzero dense flow with tracked markers or measured shear.
+    Research-informed load arrows, waves and tearing are deterministic artistic
+    animation, not force estimation, physical simulation, or material failure.
+    Per-cell particle sorting uses relative height, never an invented force rank.
+    Source-displaced models do not receive additional normal-map relief. Model
+    preview decimation/exaggeration is separate from full-resolution geometry.
 
 ## Required validation (all applications)
 

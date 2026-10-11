@@ -39,10 +39,17 @@ function pngBlob(canvas){
   const bytes=Uint8Array.from(atob(url.split(',')[1]),c=>c.charCodeAt(0));
   return new Blob([bytes],{type:'image/png'});
 }
-let studioSaving=false;
+let studioSaving=false,studioDamage=null;
+function damageKey(){return JSON.stringify([state.cropRect,state.video?.videoWidth,state.video?.videoHeight,ui.deviceSelect.value(),state.sampleImage?true:false]);}
 window.studioP5={
   ready:()=>Boolean(state.session&&ui.deviceSelect),
   backgroundStatus:()=>({frames:state.baselineCount,available:Boolean(colorReference&&colorReferenceDepth===state.baseline&&!state.calibrationDirty)}),
+  damageReference:()=>{
+    if(!colorReference||colorReferenceDepth!==state.baseline||state.calibrationDirty||state.calibrating)throw new Error('Keep the gel untouched, click Calibrate, and wait for 50 frames before loading its damage reference.');
+    const canvas=document.createElement('canvas');canvas.width=Core.WIDTH;canvas.height=Core.HEIGHT;canvas.getContext('2d').putImageData(colorReference,0,0);
+    const r=state.cropRect;return {url:canvas.toDataURL('image/png'),crop:[r.x,r.y,r.w,r.h],baseline:state.baseline,key:damageKey()};
+  },
+  setDamage:profile=>{if(profile&&(profile.baseline!==state.baseline||profile.key!==damageKey()||state.calibrationDirty))throw new Error('Reference changed. Load a fresh calibrated damage reference.');studioDamage=profile;},
   connect:()=>enableCamera(),
   disconnect:()=>{state.stream?.getTracks().forEach(t=>t.stop());state.stream=null;state.cameraEnabled=false;updateToolbarAvailability();},
   centerCrop:async()=>{state.cropFraction=.1;state.cropRect={x:.1,y:.1,w:.8,h:.8};markLiveCalibrationDirty();resetInputSmoothing();if(state.sampleImage)await processSourceFrame(state.sampleImage);},
@@ -50,6 +57,7 @@ window.studioP5={
     if(studioSaving)throw new Error('A sample is already being saved.');
     if(!state.lastDepth)throw new Error('Connect and calibrate the Mini, or load Demo, before saving.');
     if(state.calibrating||state.calibrationDirty)throw new Error('Complete a fresh no-contact calibration before saving.');
+    if(studioDamage&&(studioDamage.baseline!==state.baseline||studioDamage.key!==damageKey()))throw new Error('Damage reference is stale. Recalibrate and load a fresh reference, or explicitly disable exclusions.');
     studioSaving=true;window.studioP5.captureStage='waiting for frame';noLoop();
     try{
       await waitForProcessingIdle(3000);
@@ -62,6 +70,7 @@ window.studioP5={
       const rows=data=>data?Array.from({length:Core.HEIGHT},(_,y)=>Array.from(data.slice(y*Core.WIDTH,(y+1)*Core.WIDTH))):null;
       const r=state.cropRect,device=state.devices.find(d=>d.deviceId===ui.deviceSelect.value());
       const payload={depth:rows(state.lastDepth),baseline:rows(state.baseline),crop:[r.x,r.y,r.w,r.h],demo:Boolean(state.sampleImage),device:state.sampleImage?'Bundled p5 demo':device?.label,metadata:createExportMetadata(new Date()),calibrating:false,background_threshold:backgroundThreshold};
+      if(studioDamage)payload.sensor_damage={regions:studioDamage.regions};
       window.studioP5.captureStage='encoding frozen images';
       let background=null,model=null;
       if(colorReference&&colorReferenceDepth===state.baseline&&!state.sampleImage){

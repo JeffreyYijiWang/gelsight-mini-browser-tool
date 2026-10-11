@@ -1,4 +1,5 @@
 import {SurfaceViewer} from './viewer.js';
+import {damageEditor} from './damage-editor.js';
 const css=document.createElement('link');css.rel='stylesheet';css.href='/web/typology.css';document.head.append(css);
 let activeSession=localStorage.getItem('mini-session')||'',boardId=null,sourceKind='frames';
 let miniStream=null,miniDevice=null;
@@ -33,6 +34,10 @@ export async function mountTypology(root,{api,getState,refresh,runJob,notice,esc
   <section class="panel"><label class="field"><span>Saved comparison board</span><select id="typology-boards"><option value="">Choose a saved board</option>${(state.typologies||[]).map(b=>`<option value="${b.id}">${esc(b.name)} · ${b.items.length} images</option>`).join('')}</select></label><div id="typology-board"></div></section></div></div>
   <dialog id="typology-inspector"><button type="button" id="typology-close">Close</button><h2 id="typology-image-title"></h2><img id="typology-image" alt=""><p id="typology-image-info"></p><button type="button" id="typology-open-frame" hidden>Reconstruct this capture</button></dialog>`;
   const $=selector=>root.querySelector(selector);
+  let damageProfile=null,damageReference=null;
+  const damageUI=damageEditor($('.mini-panel'),{notice,
+    reference:()=>{if(!damageReference||!miniStream?.active||damageReference.session_id!==activeSession)throw new Error('Lift clear of contact and click Save no-contact baseline in this connection first.');return damageReference;},
+    apply:profile=>{damageProfile=profile;}});
   function attempt(fn){return async()=>{try{await fn();}catch(error){notice(error.message,true);}};}
   function status(text){$('#mini-status').textContent=text;}
   function setConnected(value){connected=value;$('#mini-capture').disabled=!value;$('#mini-baseline').disabled=!value;$('#mini-disconnect').disabled=!value;$('#mini-connect').disabled=value;}
@@ -43,6 +48,7 @@ export async function mountTypology(root,{api,getState,refresh,runJob,notice,esc
     track.onended=()=>{if(!disposed){setConnected(false);status('Mini disconnected. Check the USB cable and reconnect.');}};
   }
   $('#mini-connect').onclick=attempt(async()=>{
+    damageReference=null;damageUI.reset();
     status('Opening the GelSight Mini…');
     const found=await navigator.mediaDevices.enumerateDevices(),device=found.find(d=>d.deviceId===$('#mini-device').value&&/gelsight/i.test(d.label));
     if(!device)throw new Error('Camera permission is needed to identify the Mini safely. Open Studio with Start-Material-Studio.cmd, then click Connect Mini.');
@@ -50,8 +56,8 @@ export async function mountTypology(root,{api,getState,refresh,runJob,notice,esc
     catch(error){status('Camera did not open. Use Start-Material-Studio.cmd in Chrome; close other camera feeds and check Windows camera access.');throw error;}
     miniDevice=device;await showStream();
   });
-  $('#mini-disconnect').onclick=()=>{miniStream?.getTracks().forEach(t=>t.stop());miniStream=null;miniDevice=null;setConnected(false);$('#mini-live').srcObject=null;$('#mini-live').hidden=true;$('#mini-placeholder').hidden=false;status('Mini disconnected. Saved captures remain available.');};
-  $('#mini-session').onchange=()=>{activeSession=$('#mini-session').value;localStorage.setItem('mini-session',activeSession);};
+  $('#mini-disconnect').onclick=()=>{damageReference=null;damageUI.reset();miniStream?.getTracks().forEach(t=>t.stop());miniStream=null;miniDevice=null;setConnected(false);$('#mini-live').srcObject=null;$('#mini-live').hidden=true;$('#mini-placeholder').hidden=false;status('Mini disconnected. Saved captures remain available.');};
+  $('#mini-session').onchange=()=>{damageReference=null;damageUI.reset();activeSession=$('#mini-session').value;localStorage.setItem('mini-session',activeSession);};
   async function capture(baseline){
     if(capturing)return;capturing=true;$('#mini-capture').disabled=true;$('#mini-baseline').disabled=true;
     try{
@@ -60,10 +66,12 @@ export async function mountTypology(root,{api,getState,refresh,runJob,notice,esc
       const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;canvas.getContext('2d').drawImage(video,0,0);
       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png')),upload=new FormData();
       upload.append('file',blob,'tactile.png');upload.append('device_name',miniDevice.label);upload.append('device_id',miniDevice.deviceId);upload.append('session_id',activeSession);upload.append('baseline',String(baseline));upload.append('name',baseline?'No-contact baseline':$('#mini-name').value);
+      if(damageProfile&&!baseline)upload.append('damage',JSON.stringify({baseline_id:damageProfile.baseline_id,regions:damageProfile.regions}));
       const result=await api('/camera/browser-capture','POST',upload);
       activeSession=result.session.id;localStorage.setItem('mini-session',activeSession);
       for(const selector of ['#mini-session','#typology-session'])if(![...$(selector).options].some(o=>o.value===activeSession))$(selector).add(new Option(result.session.name,activeSession));
       $('#mini-session').value=activeSession;
+      if(baseline){damageUI.reset();damageReference={baseline_id:result.frame.id,session_id:activeSession,url:'/api/frames/'+result.frame.id+'/image',crop:[0,0,1,1]};}
       if(!baseline)chosen.add('frames:'+result.frame.id);
       await refresh(false);catalog=await api('/typology/items');renderCandidates();
       $('#last-capture').innerHTML=`<p class="hint">Saved ${esc(result.frame.source_name)} · ${baseline?'baseline':'sample'}</p><img class="last-tactile" src="/api/frames/${result.frame.id}/image" alt="Most recently saved tactile capture">${baseline?'':'<button type="button" id="reconstruct-last">Reconstruct last capture</button>'}`;

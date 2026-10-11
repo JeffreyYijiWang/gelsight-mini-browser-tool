@@ -145,9 +145,20 @@ def capture_frame(store, camera, name='', session_id=None, baseline=False):
     return save_capture(store,camera.snapshot(),camera.status()['device'],name,session_id,baseline)
 
 
-def save_capture(store, png, device, name='', session_id=None, baseline=False):
+def save_capture(store, png, device, name='', session_id=None, baseline=False, damage=None):
     from .inputs import import_bytes
     from .records import CaptureSession, now
+    from .inputs import image_array
+    from .sensor_damage import validate_regions, damage_mask
+    if damage:
+        if baseline or not session_id: raise ValueError('Save an untouched baseline in this session before marking damage.')
+        reference = store.get('frames', damage.get('baseline_id', ''))
+        if reference['session_id']!=session_id or reference['settings'].get('capture_role')!='baseline' or reference['settings'].get('capture_device_id')!=device['id']:
+            raise ValueError('Damage reference must be an untouched baseline from this device and session.')
+        rgb = image_array(png); ref = image_array(store.path(reference['raw_file']).read_bytes())
+        if rgb.shape!=ref.shape: raise ValueError('Resolution changed. Save a new untouched damage reference.')
+        damage = dict(version=1, regions=validate_regions(damage.get('regions')), baseline_id=reference['id'], reference_sha256=reference['sha256'], source_shape=list(rgb.shape), margin_pixels=2)
+        damage_mask(rgb.shape[:2], damage['regions'])
     if 'gelsight' not in device.get('name','').lower():
         raise ValueError('Select the named GelSight Mini before saving tactile captures.')
     if session_id:
@@ -167,4 +178,7 @@ def save_capture(store, png, device, name='', session_id=None, baseline=False):
         updated['baseline_id'] = result['frame']['id']
         store.save('sessions', updated)
         result['session'] = updated
+    if damage:
+        result['frame']['settings'].update(sensor_damage=damage, baseline_id=reference['id'])
+        store.save('frames', result['frame'])
     return result

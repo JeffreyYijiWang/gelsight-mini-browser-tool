@@ -17,6 +17,7 @@ def export_capture_surface(directory, depth, mask=None):
     encoded=np.rint((normals*.5+.5)*255).astype(np.uint8)
     Image.fromarray(encoded).save(directory/'normal.png')
     dx=encoded.copy();dx[...,1]=255-dx[...,1]
+    dx[~normal_mask]=(128,128,255)
     Image.fromarray(dx).save(directory/'normal-directx.png')
     np.save(directory/'normals.npy',normals,allow_pickle=False)
     Image.fromarray((valid*255).astype(np.uint8)).save(directory/'mask.png')
@@ -76,6 +77,12 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
     model_image=image_array(model_rgb) if model_rgb else None
     if reference is not None and (model_image is None or reference.shape!=(240,320,3) or model_image.shape!=reference.shape):
         raise ValueError('RGB background and model image must both be 320 × 240 RGB.')
+    damage=payload.get('sensor_damage');invalid=np.zeros(depth.shape,bool)
+    if damage:
+        import hashlib
+        from .sensor_damage import validate_regions,damage_mask
+        if baseline is None or reference is None: raise ValueError('Permanent damage requires a matching untouched depth and RGB baseline.')
+        damage=dict(version=1,regions=validate_regions(damage.get('regions')),reference_sha256=hashlib.sha256(color_baseline).hexdigest(),margin_pixels=2)
     if any(max(image.shape[:2])>2048 for image in previews):
         raise ValueError('Preview images must be at most 2048 pixels per side.')
     synthetic=bool(payload.get('demo'))
@@ -86,6 +93,9 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
     box=crop_box((rgb.shape[1],rgb.shape[0]),rect)
     if min(box[2]-box[0],box[3]-box[1])<2:
         raise ValueError('Crop is too small.')
+    if damage:
+        invalid=damage_mask(depth.shape,damage['regions'],[box[0]/rgb.shape[1],box[1]/rgb.shape[0],(box[2]-box[0])/rgb.shape[1],(box[3]-box[1])/rgb.shape[0]])
+        damage['mesh_screenshot']='Original unmasked diagnostic view; use masked mesh.obj for geometry.'
     if session_id:
         session=CaptureSession(**store.get('sessions',session_id))
         if session.synthetic!=synthetic or session.sensor_id!=device:
@@ -97,19 +107,25 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
     result=import_bytes(store,title+'.png',raw,'rgb',session.id,settings={'capture_role':'sample','sample_crop':rect,'capture_engine':'p5','capture_time':now()})
     frame=result['frame']
     patch=SurfacePatch(name=title+' depth',source_ids=[frame['id']],session_id=session.id,
-        width=320,height=240,synthetic=synthetic,settings={'p5':metadata,'crop':rect},
+        width=320,height=240,synthetic=synthetic,settings={'p5':metadata,'crop':rect,**({'sensor_damage':damage} if damage else {})},
         height_reference='p5 solver relief; baseline subtraction when supplied; not metric',
         quality={'contact_status':'not independently verified','baseline_present':baseline is not None},
         provenance=[{'operation':'synchronized p5 capture','source_sha256':frame['sha256'],'metric_validated':False}])
     cropped=Image.fromarray(rgb).crop(box)
     extras={'rgb':np.asarray(cropped.resize((320,240),Image.Resampling.BILINEAR))}
     if baseline is not None:extras['baseline']=baseline
-    saved=store.put_patch(patch,depth,**extras)
+    saved=store.put_patch(patch,depth,mask=~invalid,**extras)
     record_id=uid();directory=store.path('samples/'+record_id);directory.mkdir(parents=True)
     cropped.save(directory/'raw.png')
     for data,filename in zip(previews,('mesh.png','depth.png')):Image.fromarray(data).save(directory/filename)
     np.save(directory/'depth.npy',depth,allow_pickle=False)
-    assets=export_capture_surface(directory,depth)
+    assets=export_capture_surface(directory,depth,~invalid)
+    if damage:
+        import cv2
+        Image.fromarray((invalid*255).astype(np.uint8)).save(directory/'damage-mask.png')
+        alpha=(1-cv2.resize(invalid.astype(np.uint8),(previews[1].shape[1],previews[1].shape[0]),interpolation=cv2.INTER_NEAREST))*255
+        Image.fromarray(np.dstack((previews[1],alpha))).save(directory/'depth.png')
+        # Original solver values stay in depth.npy; validity is always a separate mask.
     if baseline is not None:np.save(directory/'baseline.npy',baseline,allow_pickle=False)
     if reference is not None:
         import cv2
@@ -118,6 +134,7 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
         # Small sensor noise islands are suppressed; this is an authored visual
         # contact mask, not a force/geometry measurement or reconstructed photograph.
         contact=cv2.morphologyEx(contact.astype(np.uint8),cv2.MORPH_OPEN,np.ones((3,3),np.uint8))
+        contact[invalid]=0
         Image.fromarray(reference).save(directory/'color-baseline.png')
         Image.fromarray(model_image).save(directory/'model-rgb.png')
         Image.fromarray(np.rint(np.clip(delta*3,0,255)).astype(np.uint8)).save(directory/'difference.png')
@@ -126,7 +143,7 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
     record=dict(id=record_id,created_at=now(),name=title,directory='samples/'+record_id,
         frame_id=frame['id'],patch_id=patch.id,session_id=session.id,synthetic=synthetic,
         source_sha256=frame['sha256'],crop=rect,crop_pixels=list(box),metadata=metadata,
-        assets=assets,
+        assets=assets,sensor_damage=damage,
         background=dict(available=reference is not None,threshold=threshold,difference_gain=3,
             method='Absolute RGB delta from averaged no-contact model input; clean image uses a thresholded contact alpha mask.',
             depth='p5 depth already subtracts its depth baseline; never subtract it twice'),
@@ -134,4 +151,6 @@ def save_p5_sample(store, raw, mesh, depth_preview, payload, name='', session_id
     (directory/'sample.json').write_text(json.dumps(record,indent=2,allow_nan=False),encoding='utf-8')
     store.save('samples',record)
     frame['settings']['sample_id']=record_id;store.save('frames',frame)
+    if damage:
+        frame['settings']['sensor_damage']=damage;store.save('frames',frame)
     return {'sample':record,'frame':frame,'patch':saved,'session':store.get('sessions',session.id)}
